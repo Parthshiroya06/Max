@@ -1,103 +1,116 @@
-// import React, { useEffect, useState } from 'react';
-// import { View, Text, StyleSheet, PermissionsAndroid, Platform, Alert, ActivityIndicator } from 'react-native';
-// import MapView, { Marker } from 'react-native-maps';
+import React, { useRef, useState } from 'react';
+import { View, StyleSheet, TextInput, Text, Button, Alert } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 
-// const  = () => {
-//   const [location, setLocation] = useState(null);
-//   const [loading, setLoading] = useState(true);
+const MapScreen = () => {
+  const mapRef = useRef(null);
+  const [selectedLocation, setSelectedLocation] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+  });
+  const [latitudeInput, setLatitudeInput] = useState('');
+  const [longitudeInput, setLongitudeInput] = useState('');
 
-//   useEffect(() => {
-//     const requestLocationPermission = async () => {
-//       try {
-//         if (Platform.OS === 'android') {
-//           const granted = await PermissionsAndroid.request(
-//             PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-//             {
-//               title: 'Location Permission',
-//               message: 'This app needs access to your location to show it on the map.',
-//               buttonPositive: 'OK',
-//             }
-//           );
+  const handleSearch = () => {
+    const latitude = parseFloat(latitudeInput);
+    const longitude = parseFloat(longitudeInput);
 
-//           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-//             getLocation();
-//           } else {
-//             Alert.alert('Permission Denied', 'Location access is required to show your position on the map.');
-//           }
-//         } else {
-//           getLocation();
-//         }
-//       } catch (err) {
-//         console.warn(err);
-//       }
-//     };
+    if (isNaN(latitude) || isNaN(longitude)) {
+      Alert.alert("Invalid Input", "Please enter valid latitude and longitude values.");
+      return;
+    }
 
-//     const getLocation = () => {
-//       navigator.geolocation.getCurrentPosition(
-//         position => {
-//           const { latitude, longitude } = position.coords;
-//           setLocation({ latitude, longitude });
-//           setLoading(false);
-//         },
-//         error => {
-//           Alert.alert('Error', `Failed to get location: ${error.message}`);
-//           setLoading(false);
-//         },
-//         { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-//       );
-//     };
+    const newLocation = { latitude, longitude };
+    setSelectedLocation(newLocation);
 
-//     requestLocationPermission();
-//   }, []);
+    // Animate the map to the new location
+    mapRef.current.animateToRegion({
+      ...newLocation,
+      latitudeDelta: 0.0922,
+      longitudeDelta: 0.0421,
+    }, 1000);
+  };
 
-//   if (loading) {
-//     return (
-//       <View style={styles.loadingContainer}>
-//         <ActivityIndicator size="large" color="#0000ff" />
-//         <Text>Fetching your location...</Text>
-//       </View>
-//     );
-//   }
+  return (
+    <View style={styles.container}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={{
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}
+      >
+        {/* Show a marker for the selected location */}
+        <Marker
+          coordinate={selectedLocation}
+          title="Selected Location"
+        />
+      </MapView>
 
-//   return (
-//     <View style={styles.container}>
-//       {location ? (
-//         <MapView
-//           style={styles.map}
-//           initialRegion={{
-//             latitude: location.latitude,
-//             longitude: location.longitude,
-//             latitudeDelta: 0.01,
-//             longitudeDelta: 0.01,
-//           }}
-//         >
-//           <Marker coordinate={location} title="You are here!" />
-//         </MapView>
-//       ) : (
-//         <Text style={styles.errorText}>Location not available</Text>
-//       )}
-//     </View>
-//   );
-// };
+      {/* Search Container */}
+      <View style={styles.searchContainer}>
+        <Text style={styles.label}>Lat:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Latitude"
+          keyboardType="numeric"
+          value={latitudeInput}
+          onChangeText={setLatitudeInput}
+        />
+        <Text style={styles.label}>Lon:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Longitude"
+          keyboardType="numeric"
+          value={longitudeInput}
+          onChangeText={setLongitudeInput}
+        />
+        <Button title="Search" onPress={handleSearch} />
+      </View>
+    </View>
+  );
+};
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//   },
-//   map: {
-//     flex: 1,
-//   },
-//   loadingContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   errorText: {
-//     textAlign: 'center',
-//     marginTop: 20,
-//     fontSize: 16,
-//     color: 'red',
-//   },
-// });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 20,
+    left: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  label: {
+    fontSize: 16,
+    marginHorizontal: 5,
+  },
+  input: {
+    width: 80,
+    height: 40,
+    paddingHorizontal: 8,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginRight: 10,
+    fontSize: 16,
+  },
+});
 
-// export default MapScreen;
+export default MapScreen;

@@ -8,6 +8,7 @@ import HomeScreen from './HomeScreen'; // Import HomeScreen
 import SetupScreen from './SetupScreen';
 import CollectScreen from './CollectScreen';
 import CollectData from './CollectData';
+import MapScreen from './MapsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -39,6 +40,7 @@ const MainTabs = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Setup" component={SetupScreen} />
       <Tab.Screen name="Collect" component={CollectScreen} />
+      <Tab.Screen name='Map' component={MapScreen}/>
       
     </Tab.Navigator>
   );
