@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView , Platform, PermissionsAndroid, Alert} from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import CheckBox from '@react-native-community/checkbox';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Importing icons
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { launchCamera} from 'react-native-image-picker';
 
 const CollectScreen = () => {
   const [selectedHabitats, setSelectedHabitats] = useState([]);
@@ -18,7 +19,7 @@ const CollectScreen = () => {
   const substrates = ["Rock", "Sand", "Vegetation", "Plastic", "Man-made"];
   const waterTypes = ["Fresh", "Brackish", "Marine", "Fast flow", "Medium", "Stagnant", "High turbidity", "Medium turbidity", "Clear"];
   const geologyTypes = ["Limestone" , "Other sediments" , "Sandstone" , "Igneous rock" ,"Alluvial" ]
-  
+  const [images, setImages] = useState([]); // State to hold captured images
 
   const toggleHabitat = (habitat) => {
     if (selectedHabitats.includes(habitat)) {
@@ -74,7 +75,31 @@ const CollectScreen = () => {
           { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
         );
       };
-
+       
+      const openCamera = async () => {
+        const options = {
+          mediaType: 'photo',
+          cameraType: 'back',
+          quality: 1,
+        };
+      
+        try {
+          const result = await launchCamera(options);
+          if (result.didCancel) {
+            console.log('User cancelled camera');
+          } else if (result.errorCode) {
+            console.error('Camera error: ', result.errorCode);
+            Alert.alert('Camera Error', result.errorMessage);
+          } else if (result.assets) {
+            setImages([...images, ...result.assets.map(asset => asset.uri)]);
+          }
+        } catch (error) {
+          console.error('Error opening camera: ', error);
+          Alert.alert('Error', 'Failed to open camera');
+        }
+      };
+      
+      
 
   return (
     <View style={styles.container}>
@@ -120,7 +145,7 @@ const CollectScreen = () => {
         <Text style={styles.sectionHeader}>Pictures</Text>
         <View style={styles.separator} />
         <Text style={styles.label}>Vial pictures</Text>
-        <TouchableOpacity style={styles.pictureContainer}>
+        <TouchableOpacity style={styles.pictureContainer}onPress={openCamera}>
           <Text style={styles.placeholderText}>No Photos added</Text>
           <Text style={styles.cameraIcon}>📷</Text>
         </TouchableOpacity>
@@ -151,7 +176,7 @@ const CollectScreen = () => {
                 )}
               </View>
               <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                <Icon name={isExpanded ? 'expand-less' : 'expand-more'} size={24} color="#007BFF" />
+                <Icon name={isExpanded ? "expand-less" : "expand-more"} size={24} color="black" />
               </TouchableOpacity>
             </View>
             {isExpanded && (
@@ -188,7 +213,7 @@ const CollectScreen = () => {
                 )}
               </View>
               <TouchableOpacity onPress={() => setIsSubstrateExpanded(!isSubstrateExpanded)}>
-                <Icon name={isSubstrateExpanded ? 'expand-less' : 'expand-more'} size={24} color="#007BFF" />
+                <Icon name={isSubstrateExpanded ? 'expand-less' : 'expand-more'} size={24} color="black" />
               </TouchableOpacity>
             </View>
             {isSubstrateExpanded && (
@@ -225,7 +250,7 @@ const CollectScreen = () => {
                 )}
               </View>
               <TouchableOpacity onPress={() => setIsWaterExpanded(!isWaterExpanded)}>
-                <Icon name={isWaterExpanded ? 'expand-less' : 'expand-more'} size={24} color="#007BFF" />
+                <Icon name={isWaterExpanded ? 'expand-less' : 'expand-more'} size={24} color="black" />
               </TouchableOpacity>
             </View>
             {isWaterExpanded && (
@@ -262,7 +287,7 @@ const CollectScreen = () => {
                 )}
               </View>
               <TouchableOpacity onPress={() => setIsGeologyExpanded(!isGeologyExpanded)}>
-                <Icon name={isGeologyExpanded ? 'expand-less' : 'expand-more'} size={24} color="#007BFF" />
+                <Icon name={isGeologyExpanded ? 'expand-less' : 'expand-more'} size={24} color="black" />
               </TouchableOpacity>
             </View>
             {isGeologyExpanded && (
@@ -474,12 +499,13 @@ const styles = StyleSheet.create({
     maxWidth: '80%', // Ensure it doesn't overflow
   },
   habitatTag: {
-    backgroundColor: '#007BFF',
+    backgroundColor: 'black',
     color: '#FFF',
     borderRadius: 15,
-    padding: 5,
-    marginRight: 5,
+    padding: 6,
+    marginRight: 7,
     marginBottom: 5,
+    
   },
   toggleText: {
     color: '#007BFF',
@@ -497,7 +523,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   habitatText: {
-    fontSize: 16,
+    fontSize: 17,
+    color:'black'
   },
   footer: {
     marginTop: 20,
