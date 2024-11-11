@@ -9,6 +9,11 @@ import SetupScreen from './SetupScreen';
 import CollectScreen from './CollectScreen';
 import CollectData from './CollectData';
 import MapScreen from './MapsScreen';
+import HabitatPicturesScreen from './HabitatScreen';
+//import ProjectDetails from 'ProjectDetails';
+import VialPicture from './VialPicture';
+import SetupDetail from './SetupDetail';
+import ProjectDetails from './ProjectDetails';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -53,7 +58,16 @@ export default function NavigationScreen() {
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="CollectDataScreen" component={CollectData} options={{ headerShown: false }} />
+        <Stack.Screen name="CollectDataScreen" component={ProjectDetails} options={{ headerShown: false }} />
+        <Stack.Screen name="CollectScreen" component={CollectData} options={{ headerShown: false }} />
+        <Stack.Screen name="ProjectDetails" component={ProjectDetails} options={{ headerShown: false }} />
+        <Stack.Screen name="Project" component={CollectScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="VialPicture" component={VialPicture} options={{ headerShown: false }}/>
+        <Stack.Screen name="HabitatPicture" component={HabitatPicturesScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="SetupDetail" component={SetupDetail} options={{ headerShown: false }}/>
+        <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="Home2" component={HomeScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="SetupScreen" component={SetupScreen} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
