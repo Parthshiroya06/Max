@@ -1,62 +1,282 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert , Platform } from 'react-native';
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  FlatList,
+} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
-import { Dimensions } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Dimensions} from 'react-native';
 import Icons from 'react-native-vector-icons/MaterialIcons'; // or another icon set
-import { useUploadStatus } from './UploadStatusProvider';
+import {useUploadStatus} from './UploadStatusProvider';
 
-
-const { width, height } = Dimensions.get('window');
-
-
+const {width, height} = Dimensions.get('window');
 const SetupDetail = () => {
-  const [selectedHabitats, setSelectedHabitats] = useState([]);
-  const [selectedSubstrates, setSelectedSubstrates] = useState([]);
-  const [selectedWaterTypes, setSelectedWaterTypes] = useState([]);
-  const [projectId, setProjectId] = useState('');
-  const [projectName, setProjectName] = useState('');
-  const [expandedBox, setExpandedBox] = useState(null);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState({ isVisible: false, field: '' });
+  
+  // State variables to manage project details and UI states
+  const [selectedHabitats, setSelectedHabitats] = useState([]); // Tracks selected Team Members
+  const [selectedWaterTypes, setSelectedWaterTypes] = useState([]); // Tracks selected City Names
+  const [projectId, setProjectId] = useState(''); // Stores generated project ID
+  const [projectName, setProjectName] = useState(''); // Stores project name
+  const [expandedBox, setExpandedBox] = useState(null); // Tracks which box is expanded
+  const [fromDate, setFromDate] = useState(null); // Tracks start date
+  const [toDate, setToDate] = useState(null); // Tracks end date
+  const [showDatePicker, setShowDatePicker] = useState({
+    isVisible: false, // Tracks visibility of date picker
+    field: '', // Tracks which field (from or to date) to update
+  });
   const [description, setDescription] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const navigation = useNavigation();
-  const habitats = ["Ankit", "Raj", "Ayush", "Anuj"];
-  const substrates = ["India", "United State", "Germany", "Russia", "France"];
-  const waterTypes = ["Patna", "Indore", "Delhi", "Pune", "Bhopal", "Mumbai", "Nagpur"];
-  const { isUploaded, setIsUploaded, uploadedNotes, setUploadedNotes } = useUploadStatus(); // Use context
+  const habitats = ['Ankit', 'Raj', 'Ayush', 'Anuj'];
+  const waterTypes = [
+    'Patna',
+    'Indore',
+    'Delhi',
+    'Pune',
+    'Bhopal',
+    'Mumbai',
+    'Nagpur',
+  ];
 
+  // Hardcoded list of 200 country names
+  const countries = [
+    'Afghanistan',
+    'Albania',
+    'Algeria',
+    'Andorra',
+    'Angola',
+    'Antigua and Barbuda',
+    'Argentina',
+    'Armenia',
+    'Australia',
+    'Austria',
+    'Azerbaijan',
+    'Bahamas',
+    'Bahrain',
+    'Bangladesh',
+    'Barbados',
+    'Belarus',
+    'Belgium',
+    'Belize',
+    'Benin',
+    'Bhutan',
+    'Bolivia',
+    'Bosnia and Herzegovina',
+    'Botswana',
+    'Brazil',
+    'Brunei',
+    'Bulgaria',
+    'Burkina Faso',
+    'Burundi',
+    'Cabo Verde',
+    'Cambodia',
+    'Cameroon',
+    'Canada',
+    'Central African Republic',
+    'Chad',
+    'Chile',
+    'China',
+    'Colombia',
+    'Comoros',
+    'Congo (Congo-Brazzaville)',
+    'Congo (Congo-Kinshasa)',
+    'Costa Rica',
+    'Croatia',
+    'Cuba',
+    'Cyprus',
+    'Czech Republic (Czechia)',
+    'Denmark',
+    'Djibouti',
+    'Dominica',
+    'Dominican Republic',
+    'Ecuador',
+    'Egypt',
+    'El Salvador',
+    'Equatorial Guinea',
+    'Eritrea',
+    'Estonia',
+    'Eswatini',
+    'Ethiopia',
+    'Fiji',
+    'Finland',
+    'France',
+    'Gabon',
+    'Gambia',
+    'Georgia',
+    'Germany',
+    'Ghana',
+    'Greece',
+    'Grenada',
+    'Guatemala',
+    'Guinea',
+    'Guinea-Bissau',
+    'Guyana',
+    'Haiti',
+    'Honduras',
+    'Hungary',
+    'Iceland',
+    'India',
+    'Indonesia',
+    'Iran',
+    'Iraq',
+    'Ireland',
+    'Israel',
+    'Italy',
+    'Jamaica',
+    'Japan',
+    'Jordan',
+    'Kazakhstan',
+    'Kenya',
+    'Kiribati',
+    'Korea (North)',
+    'Korea (South)',
+    'Kuwait',
+    'Kyrgyzstan',
+    'Laos',
+    'Latvia',
+    'Lebanon',
+    'Lesotho',
+    'Liberia',
+    'Libya',
+    'Liechtenstein',
+    'Lithuania',
+    'Luxembourg',
+    'Madagascar',
+    'Malawi',
+    'Malaysia',
+    'Maldives',
+    'Mali',
+    'Malta',
+    'Marshall Islands',
+    'Mauritania',
+    'Mauritius',
+    'Mexico',
+    'Micronesia',
+    'Moldova',
+    'Monaco',
+    'Mongolia',
+    'Montenegro',
+    'Morocco',
+    'Mozambique',
+    'Myanmar (Burma)',
+    'Namibia',
+    'Nauru',
+    'Nepal',
+    'Netherlands',
+    'New Zealand',
+    'Nicaragua',
+    'Niger',
+    'Nigeria',
+    'North Macedonia',
+    'Norway',
+    'Oman',
+    'Pakistan',
+    'Palau',
+    'Panama',
+    'Papua New Guinea',
+    'Paraguay',
+    'Peru',
+    'Philippines',
+    'Poland',
+    'Portugal',
+    'Qatar',
+    'Romania',
+    'Russia',
+    'Rwanda',
+    'Saint Kitts and Nevis',
+    'Saint Lucia',
+    'Saint Vincent and the Grenadines',
+    'Samoa',
+    'San Marino',
+    'Sao Tome and Principe',
+    'Saudi Arabia',
+    'Senegal',
+    'Serbia',
+    'Seychelles',
+    'Sierra Leone',
+    'Singapore',
+    'Slovakia',
+    'Slovenia',
+    'Solomon Islands',
+    'Somalia',
+    'South Africa',
+    'South Sudan',
+    'Spain',
+    'Sri Lanka',
+    'Sudan',
+    'Suriname',
+    'Sweden',
+    'Switzerland',
+    'Syria',
+    'Taiwan',
+    'Tajikistan',
+    'Tanzania',
+    'Thailand',
+    'Timor-Leste',
+    'Togo',
+    'Tonga',
+    'Trinidad and Tobago',
+    'Tunisia',
+    'Turkey',
+    'Turkmenistan',
+    'Tuvalu',
+    'Uganda',
+    'Ukraine',
+    'United Arab Emirates',
+    'United Kingdom',
+    'United States',
+    'Uruguay',
+    'Uzbekistan',
+    'Vanuatu',
+    'Vatican City',
+    'Venezuela',
+    'Vietnam',
+    'Yemen',
+    'Zambia',
+    'Zimbabwe',
+  ];
+  const [searchText, setSearchText] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
 
-  const toggleHabitat = (habitat) => {
+  // Access addProject from context API
+  const {addProject} = useUploadStatus();
+
+  // Handles selecting a country from the dropdown
+  const handleCountrySelection = country => {
+    setSelectedCountry(country); // Set the selected country
+    setSearchText(''); // Clear the search text
+    setIsDropdownVisible(false); // Hide the dropdown
+  };
+
+  // Toggles Team Members selection
+  const toggleHabitat = habitat => {
     if (selectedHabitats.includes(habitat)) {
-      setSelectedHabitats(selectedHabitats.filter((item) => item !== habitat));
+      setSelectedHabitats(selectedHabitats.filter(item => item !== habitat)); // Remove if already selected
     } else {
-      setSelectedHabitats([...selectedHabitats, habitat]);
+      setSelectedHabitats([...selectedHabitats, habitat]); // Add if not already selected
     }
   };
 
-  const toggleSubstrate = (substrate) => {
-    if (selectedSubstrates.includes(substrate)) {
-      setSelectedSubstrates([]); // Deselect if already selected
-    } else {
-      setSelectedSubstrates([substrate]); // Allow only one selection
-    }
-  };
-
-  const toggleWater = (waterType) => {
+  // Allows selecting only one City
+  const toggleWater = waterType => {
     if (selectedWaterTypes.includes(waterType)) {
       setSelectedWaterTypes([]); // Deselect if already selected
     } else {
       setSelectedWaterTypes([waterType]); // Allow only one selection
     }
   };
-  
 
+  // Focus handlers for description input
   const handleFocus = () => {
     setIsFocused(true);
   };
@@ -65,34 +285,51 @@ const SetupDetail = () => {
     setIsFocused(false);
   };
 
-  // Generate Project ID
+  // Generates a unique project ID using selected country , start date and Random Character / Number
   const generateProjectId = () => {
-    const countryCode = selectedSubstrates.length > 0 ? selectedSubstrates[0].substring(0, 3).toUpperCase() : '';
-    const datePart = fromDate ? fromDate.toISOString().slice(8, 10) + fromDate.toISOString().slice(5, 7) + fromDate.toISOString().slice(2, 4) : '';
+
+    // Get first 3 characters of the country
+    const countryCode =
+      selectedCountry && selectedCountry.length >= 3
+        ? selectedCountry.trim().substring(0, 3).toUpperCase()
+        : selectedCountry.trim().toUpperCase();
+
+    // Format the date as DDMMYY
+    const datePart =
+      fromDate instanceof Date
+        ? (function () {
+            const localDate = new Date(fromDate); // Ensure it's treated as a Date object
+            const day = String(localDate.getDate()).padStart(2, '0'); // Local day
+            const month = String(localDate.getMonth() + 1).padStart(2, '0'); // Local month
+            const year = String(localDate.getFullYear()).slice(2, 4); // Last two digits of the year
+            return `${day}${month}${year}`;
+          })()
+        : '';
     const randomPart = Math.random().toString(36).substring(2, 5).toUpperCase();
     return `${countryCode}${datePart}${randomPart}`;
   };
 
-
+  // Handles date picker changes
   const handleDateChange = (event, selectedDate) => {
-    if (event.type === "set") { 
+    if (event.type === 'set') {
       if (showDatePicker.field === 'from') {
         setFromDate(selectedDate);
       } else if (showDatePicker.field === 'to') {
         setToDate(selectedDate);
       }
     }
-    setShowDatePicker({ isVisible: false, field: '' });
+    setShowDatePicker({isVisible: false, field: ''});
   };
 
-  const showDatePickerHandler = (field) => {
-    setShowDatePicker({ isVisible: true, field });
+  // Displays date picker for specific fields
+  const showDatePickerHandler = field => {
+    setShowDatePicker({isVisible: true, field});
   };
 
+  // Validates form inputs and submits the project
   const handleSubmit = async () => {
-
-    if (selectedHabitats.length === 0 || selectedSubstrates.length === 0) {
-      Alert.alert('Validation Error', 'Please select at least one habitat and substrate.');
+    if (selectedHabitats.length === 0) {
+      Alert.alert('Validation Error', 'Please select at least one habitat .');
       return;
     }
 
@@ -100,17 +337,16 @@ const SetupDetail = () => {
       Alert.alert('Date Error', 'From date cannot be later than To date.');
       return;
     }
- 
+
     // Generate and set Project ID
     const generatedId = generateProjectId();
     setProjectId(generatedId);
-
 
     const newProject = {
       id: generatedId,
       projectName,
       habitats: selectedHabitats,
-      substrates: selectedSubstrates,
+      country: selectedCountry,
       waterTypes: selectedWaterTypes,
       fromDate: fromDate ? fromDate.toISOString() : null,
       toDate: toDate ? toDate.toISOString() : null,
@@ -123,17 +359,20 @@ const SetupDetail = () => {
       const projects = storedProjects ? JSON.parse(storedProjects) : [];
       projects.push(newProject);
       await AsyncStorage.setItem('projects', JSON.stringify(projects));
+
+      // Add project to Context API
+      addProject(newProject);
+
       Alert.alert('Success', 'Project created successfully!');
-      navigation.navigate('SetupScreen2', { newProject });
+      navigation.navigate('SetupScreen2', {newProject});
     } catch (error) {
       console.error('Error saving project to AsyncStorage:', error);
     }
   };
-  
 
   // Function to toggle expand/collapse of the selected box
-  const toggleExpand = (box) => {
-    setExpandedBox(expandedBox === box ? null : box);  // Close if already open, open new box
+  const toggleExpand = box => {
+    setExpandedBox(expandedBox === box ? null : box); // Close if already open, open new box
   };
 
   // Function to check if all required fields are filled
@@ -141,181 +380,194 @@ const SetupDetail = () => {
     return (
       projectName &&
       selectedHabitats.length > 0 &&
-      selectedSubstrates.length > 0 &&
       selectedWaterTypes.length > 0 &&
       fromDate &&
       toDate &&
-      description
+      description &&
+      selectedCountry
     );
   };
-  
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('SetupScreen')} style={styles.backIconContainer}>
-            <Text style={styles.backIcon}>{'<'}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SetupScreen')}
+            style={styles.backIconContainer}>
+            <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>
           <Text style={styles.header}>Setup Project</Text>
         </View>
-
-
-
-
         <TextInput
           style={styles.input}
           placeholder="Project Name"
           placeholderTextColor="gray"
           value={projectName}
-          onChangeText={(text) => setProjectName(text)}
+          onChangeText={text => setProjectName(text)}
         />
-
         <View style={styles.habitatContainer}>
-  <View style={styles.habitatDescriptionBox}>
-    <View style={styles.selectedHabitatsContainer}>
-      <View style={styles.selectedHabitatsWrapper}>
-        {selectedHabitats.length === 0 ? (
-          <Text style={styles.placeholderText}>Select Team</Text>
-        ) : (
-          selectedHabitats.map((habitat, index) => (
-            <Text key={index} style={styles.habitatTag}>{habitat}</Text>
-          ))
-        )}
-        {selectedHabitats.length > 4 && !isExpanded && (
-          <Text style={styles.additionalText}>+{selectedHabitats.length - 4}</Text>
-        )}
-      </View>
-      <TouchableOpacity onPress={() => toggleExpand('habitats')}>
-      <Icon name={expandedBox === 'habitats' ? "expand-less" : "expand-more"} size={29} color="black" />
-      </TouchableOpacity>
-    </View>
-    {expandedBox === 'habitats' && (
+          <View style={styles.habitatDescriptionBox}>
+            <View style={styles.selectedHabitatsContainer}>
+              <View style={styles.selectedHabitatsWrapper}>
+                {selectedHabitats.length === 0 ? (
+                  <Text style={styles.placeholderText}>Select Team</Text>
+                ) : (
+                  selectedHabitats.map((habitat, index) => (
+                    <Text key={index} style={styles.habitatTag}>
+                      {habitat}
+                    </Text>
+                  ))
+                )}
+                {selectedHabitats.length > 4 && !isExpanded && (
+                  <Text style={styles.additionalText}>
+                    +{selectedHabitats.length - 4}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => toggleExpand('habitats')}>
+                <Icon
+                  name={
+                    expandedBox === 'habitats' ? 'expand-less' : 'expand-more'
+                  }
+                  size={29}
+                  color="black"
+                />
+              </TouchableOpacity>
+            </View>
+            {expandedBox === 'habitats' && (
               <View style={styles.habitatList}>
                 {habitats.map((habitat, index) => (
                   <View key={index} style={styles.habitatCheckboxContainer}>
                     <CheckBox
                       value={selectedHabitats.includes(habitat)}
                       onValueChange={() => toggleHabitat(habitat)}
+                      tintColors={{true: '#48938F', false: '#000000'}}
+                      v
                       style={styles.checkbox}
                     />
                     <Text style={styles.habitatText}>{habitat}</Text>
                   </View>
-        ))}
-      </View>
-    )}
-  </View>
-</View>
-
-
-<Text style={styles.label}>Destination</Text>
-<View style={styles.habitatContainer}>
-  <View style={styles.habitatDescriptionBox}>
-    <View style={styles.selectedHabitatsContainer}>
-      <View style={styles.selectedHabitatsWrapper}>
-        {selectedSubstrates.length === 0 ? (
-          <Text style={styles.placeholderText}>Country</Text>
-        ) : (
-          selectedSubstrates.map((substrate, index) => (
-            <Text key={index} style={styles.habitatTag}>{substrate}</Text>
-          ))
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+        <Text style={styles.label}>Destination</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Country"
+          placeholderTextColor="gray"
+          value={selectedCountry}
+          onFocus={() => setIsDropdownVisible(true)}
+          onChangeText={text => {
+            setSelectedCountry(text);
+            setIsDropdownVisible(true);
+          }}
+        />
+        {isDropdownVisible && (
+          <FlatList
+            data={countries.filter(
+              country =>
+                selectedCountry &&
+                country.toLowerCase().includes(selectedCountry.toLowerCase()),
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({item}) => (
+              <TouchableOpacity onPress={() => handleCountrySelection(item)}>
+                <Text style={styles.countryText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            style={styles.countryList}
+          />
         )}
-        {selectedSubstrates.length > 4 && !isSubstrateExpanded && (
-          <Text style={styles.additionalText}>+{selectedSubstrates.length - 4}</Text>
-        )}
-      </View>
-      <TouchableOpacity onPress={() => toggleExpand('substrates')}>
-      <Icon name={expandedBox === 'substrates' ? "expand-less" : "expand-more"} size={29} color="black" />
-      </TouchableOpacity>
-    </View>
-    {expandedBox === 'substrates' && (
+        <View style={styles.habitatContainer}>
+          <View style={styles.habitatDescriptionBox}>
+            <View style={styles.selectedHabitatsContainer}>
+              <View style={styles.selectedHabitatsWrapper}>
+                {selectedWaterTypes.length === 0 ? (
+                  <Text style={styles.placeholderText}>City</Text>
+                ) : (
+                  selectedWaterTypes.map((waterType, index) => (
+                    <Text key={index} style={styles.habitatTag}>
+                      {waterType}
+                    </Text>
+                  ))
+                )}
+                {selectedWaterTypes.length > 4 && !isWaterExpanded && (
+                  <Text style={styles.additionalText}>
+                    +{selectedWaterTypes.length - 4}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => toggleExpand('waterTypes')}>
+                <Icon
+                  name={
+                    expandedBox === 'WaterTypes' ? 'expand-less' : 'expand-more'
+                  }
+                  size={29}
+                  color="black"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {expandedBox === 'waterTypes' && (
               <View style={styles.habitatList}>
-                {substrates.map((substrates, index) => (
+                {waterTypes.map((waterTypes, index) => (
                   <View key={index} style={styles.habitatCheckboxContainer}>
                     <CheckBox
-                      value={selectedSubstrates.includes(substrates)}
-                      onValueChange={() => toggleSubstrate(substrates)}
+                      value={selectedWaterTypes.includes(waterTypes)}
+                      onValueChange={() => toggleWater(waterTypes)}
+                      tintColors={{true: '#48938F', false: '#000000'}}
+                      v
                       style={styles.checkbox}
                     />
-                    <Text style={styles.habitatText}>{substrates}</Text>
+                    <Text style={styles.habitatText}>{waterTypes}</Text>
                   </View>
-        ))}
-      </View>
-    )}
-  </View>
-</View>
-
-
-
-
-<View style={styles.habitatContainer}>
-  <View style={styles.habitatDescriptionBox}>
-    <View style={styles.selectedHabitatsContainer}>
-      <View style={styles.selectedHabitatsWrapper}>
-        {selectedWaterTypes.length === 0 ? (
-          <Text style={styles.placeholderText}>City</Text>
-        ) : (
-          selectedWaterTypes.map((waterType, index) => (
-            <Text key={index} style={styles.habitatTag}>{waterType}</Text>
-          ))
-        )}
-        {selectedWaterTypes.length > 4 && !isWaterExpanded && (
-          <Text style={styles.additionalText}>+{selectedWaterTypes.length - 4}</Text>
-        )}
-      </View>
-      <TouchableOpacity onPress={() => toggleExpand('waterTypes')}>
-      <Icon name={expandedBox === 'WaterTypes' ? "expand-less" : "expand-more"} size={29} color="black" />
-      </TouchableOpacity>
-    </View>
-
-  
-         {expandedBox === 'waterTypes' && (
-          <View style={styles.habitatList}>
-            {waterTypes.map((waterTypes, index) => (
-              <View key={index} style={styles.habitatCheckboxContainer}>
-                <CheckBox
-                  value={selectedWaterTypes.includes(waterTypes)}
-                  onValueChange={() => toggleWater(waterTypes)}
-                  style={styles.checkbox}
-                />
-                <Text style={styles.habitatText}>{waterTypes}</Text>
+                ))}
               </View>
-        ))}
-      </View>
-    )}
-    
-  </View>
-</View>
-  
+            )}
+          </View>
+        </View>
 
-  {/* Select Start Date */}
-  <Text style={styles.label}>Dates</Text>
-  <TouchableOpacity onPress={() => showDatePickerHandler('from')}>
-  <View style={styles.dateBoxContainer}>
-          <TextInput
-            style={styles.dateBox}
-            placeholder="Select Start Date"
-            placeholderTextColor="gray"
-            value={fromDate ? fromDate.toLocaleDateString() : ''}
-            editable={false}
-          />
-           <Icons name="calendar-today" size={20} color="gray" style={styles.calendarIcon} />
-           </View>
+        {/* Select Start Date */}
+        <Text style={styles.label}>Dates</Text>
+        <TouchableOpacity onPress={() => showDatePickerHandler('from')}>
+          <View style={styles.dateBoxContainer}>
+            <TextInput
+              style={styles.dateBox}
+              placeholder="Select Start Date"
+              placeholderTextColor="gray"
+              value={fromDate ? fromDate.toLocaleDateString() : ''}
+              editable={false}
+            />
+            <Icons
+              name="calendar-today"
+              size={20}
+              color="gray"
+              style={styles.calendarIcon}
+            />
+          </View>
         </TouchableOpacity>
 
         {/* Select End Date */}
         <TouchableOpacity onPress={() => showDatePickerHandler('to')}>
-        <View style={styles.dateBoxContainer}>
-        <TextInput
-          style={styles.dateBox}
-          placeholder="Select End Date"
-          placeholderTextColor="gray"
-          value={toDate ? toDate.toLocaleDateString() : ''}
-          editable={false}
-        />
-         <Icons name="calendar-today" size={20} color="gray" style={styles.calendarIcon} />
-      </View>
+          <View style={styles.dateBoxContainer}>
+            <TextInput
+              style={styles.dateBox}
+              placeholder="Select End Date"
+              placeholderTextColor="gray"
+              value={toDate ? toDate.toLocaleDateString() : ''}
+              editable={false}
+            />
+            <Icons
+              name="calendar-today"
+              size={20}
+              color="gray"
+              style={styles.calendarIcon}
+            />
+          </View>
         </TouchableOpacity>
-
         {showDatePicker.isVisible && (
           <DateTimePicker
             value={new Date()}
@@ -324,30 +576,24 @@ const SetupDetail = () => {
             onChange={handleDateChange}
           />
         )}
- 
- <Text style={styles.label}>Description</Text>
-<TextInput
+        <Text style={styles.label}>Description</Text>
+        <TextInput
           style={styles.input2}
           value={description}
-          onChangeText={(text) => setDescription(text)}
+          onChangeText={text => setDescription(text)}
           onFocus={handleFocus}
           onBlur={handleBlur}
           multiline
-          
         />
 
- {/* Conditionally render the Submit Button */}
- {isFormValid() && (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSubmit}
-          >
+        {/* Conditionally render the Submit Button */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSubmit}
+          disabled={!isFormValid()}>
           <Text style={styles.buttonText}>Submit</Text>
-        </TouchableOpacity> 
-        )}
-        
+        </TouchableOpacity>
       </ScrollView>
-      
     </View>
   );
 };
@@ -356,7 +602,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ACCAC8',
-    
   },
   scrollViewContent: {
     padding: 20,
@@ -395,7 +640,6 @@ const styles = StyleSheet.create({
   },
   habitatContainer: {
     marginTop: 20,
-    
   },
   input: {
     height: 72,
@@ -404,26 +648,25 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 25,
     marginTop: 15,
-    color:'black',
+    color: 'black',
     backgroundColor: '#FFF',
-    fontSize:16
+    fontSize: 16,
   },
   input2: {
     height: 200,
     borderColor: 'black',
     borderWidth: 1,
     borderRadius: 10,
-    fontSize:18,
+    fontSize: 18,
     padding: 17,
     marginTop: 15,
     backgroundColor: '#FFF',
     textAlignVertical: 'top',
-    
   },
   observationsInput: {
     height: 125,
     textAlignVertical: 'top',
-    marginTop:2
+    marginTop: 2,
   },
   habitatDescriptionBox: {
     backgroundColor: 'white',
@@ -467,7 +710,7 @@ const styles = StyleSheet.create({
   },
   habitatText: {
     fontSize: 16,
-    color:"black"
+    color: 'black',
   },
   measurementContainer: {
     marginTop: 20,
@@ -480,7 +723,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 12,
     borderColor: '#000000',
-    paddingHorizontal:40,
+    paddingHorizontal: 40,
     backgroundColor: '#fff', // Ensures contrast with placeholder text
     color: '#000', // Ensures date text is visible
   },
@@ -490,17 +733,18 @@ const styles = StyleSheet.create({
     margin: 2,
   },
   button: {
-    width: 328,
-    height: 60,
+    width: width * 0.9, // 90% of the screen width
+    height: 60, // Fixed height
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 30,
-    marginTop:35,
+    marginTop: 35,
     backgroundColor: '#48938F',
-    marginLeft:15
+    marginLeft: 'auto', // Centers the button horizontally
+    marginRight: 'auto',
   },
   buttonText: {
     color: 'black',
@@ -524,19 +768,44 @@ const styles = StyleSheet.create({
     marginTop: 15,
     color: 'black',
     backgroundColor: '#FFF',
-    fontSize:16
+    fontSize: 16,
   },
   dateBoxWrapper: {
-    position: 'relative', 
+    position: 'relative',
   },
   calendarIcon: {
-    position: 'absolute', 
-    right: 20, 
-    top: '50%', 
-    transform: [{ translateY: -10 }], 
-    fontSize:33,
-    color:"black"
-
+    position: 'absolute',
+    right: 20,
+    top: '50%',
+    transform: [{translateY: -10}],
+    fontSize: 33,
+    color: 'black',
+  },
+  countryList: {
+    maxHeight: 150, // Restrict the height
+    borderWidth: 1,
+    borderColor: 'black',
+    marginTop: 0,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 5,
+  },
+  countryText: {
+    fontSize: 16,
+    padding: 4,
+    marginLeft: 10,
+    borderColor: 'black',
+    color: 'black',
+  },
+  selectedCountry: {
+    fontSize: 16,
+    color: 'green',
+    marginTop: 10,
+  },
+  noResultText: {
+    fontSize: 14,
+    color: 'red',
+    marginTop: 5,
   },
 });
 

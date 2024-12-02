@@ -1,71 +1,123 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, {useEffect, useState, useCallback} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useUploadStatus} from './UploadStatusProvider';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const SetupScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const [projects, setProjects] = useState([]);
+  const {getProjectStatus} = useUploadStatus(); // Use the project status function from UploadStatusProvider
+  const [uploadedNotes, setUploadedNotes] = useState([]);
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const storedProjects = await AsyncStorage.getItem('projects');
-        if (storedProjects) {
-          setProjects(JSON.parse(storedProjects));
-        }
-      } catch (error) {
-        console.error('Error loading projects from AsyncStorage:', error);
+  // Load projects from AsyncStorage and update the projects array
+  const loadProjects = useCallback(async () => {
+    try {
+      const storedProjects = await AsyncStorage.getItem('projects');
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects);
+
+        // Update each project's status based on upload state
+        const projectsWithStatus = parsedProjects.map(project => ({
+          ...project,
+          isUploaded: getProjectStatus(project.id),
+        }));
+        setProjects(projectsWithStatus);
       }
-    };
+    } catch (error) {
+      console.error('Error loading projects from AsyncStorage:', error);
+    }
+  }, [getProjectStatus]);
+  
+  // Set uploaded notes from route params if available
+  useFocusEffect(
+    useCallback(() => {
+      loadProjects();
+    }, [loadProjects]),
+  );
 
-    loadProjects();
-  }, []);
+  // Set uploaded notes from route params if available
+  useEffect(() => {
+    if (route.params?.uploadedNotes) {
+      setUploadedNotes(route.params.uploadedNotes);
+    }
+  }, [route.params?.uploadedNotes]);
 
-
-
-  const renderProject = ({ item }) => (
-    <TouchableOpacity style={styles.projectItem}>
+  // Render each project item in the list
+  const renderProject = ({item}) => (
+    <TouchableOpacity
+      style={[styles.projectItem, !item.isUploaded && styles.disabled]}
+      onPress={
+        item.isUploaded
+          ? () => navigation.navigate('ProjectDetails', {projectId: item.id})
+          : null
+      }>
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
-        <Text style={styles.CityCountry}>{item.substrates.join(', ')}, {item.waterTypes.join(', ')}</Text>
+        <Text style={styles.CityCountry}>
+          {item.waterTypes.join(', ') || 'No water types'},{' '}
+          {item.country || 'No country'}
+        </Text>
         <Text style={styles.Date}>
-          {item.fromDate && item.toDate ? `${new Date(item.fromDate).toLocaleDateString()} - ${new Date(item.toDate).toLocaleDateString()}` : 'No date range'}
+          {item.fromDate && item.toDate
+            ? `${new Date(item.fromDate).toLocaleDateString()} - ${new Date(
+                item.toDate,
+              ).toLocaleDateString()}`
+            : 'No date range'}
         </Text>
       </View>
       <View style={styles.statusIcon}>
-        <Icon name="pending-actions" size={28} color="black" />
+        {item.isUploaded ? (
+          <Icon name="cloud-done" size={28} color="black" />
+        ) : (
+          <Icon name="pending-actions" size={28} color="black" />
+        )}
       </View>
     </TouchableOpacity>
   );
 
-
-  
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home2')} style={styles.backIconContainer}>
-            <Text style={styles.backIcon}>{'<'}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            style={styles.backIconContainer}>
+            <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>
-          <Text style={styles.header}>Projects</Text>
+          <Text style={styles.header}> All Projects</Text>
         </View>
 
-
-        {/*  This FlatList renders the list of projects. */}
         <FlatList
           data={projects}
           renderItem={renderProject}
-          ListEmptyComponent={<Text style={styles.emptyComponent}>No projects available</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyComponent}>No projects available</Text>
+          }
+          keyExtractor={item => item.id.toString()}
         />
 
         {/* Button to Create New Project */}
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SetupDetail')}>
-        <View style={styles.buttonContent}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('SetupDetail')}>
+          <View style={styles.buttonContent}>
             <Text style={styles.plusSign}>+</Text>
             <Text style={styles.buttonText}>Create project</Text>
           </View>
@@ -85,24 +137,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: height * 0.05,
-    marginTop:height * 0.03,
-    marginRight:width * 0.03
+    marginTop: height * 0.03,
+    marginRight: width * 0.03,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'black',
     textAlign: 'center',
-    flex: 1, 
+    flex: 1,
   },
   backIconContainer: {
     paddingRight: 8,
-    marginLeft:width * 0.03
+    marginLeft: width * 0.03,
   },
   backIcon: {
     fontSize: 37,
     color: 'black',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   projectItem: {
     flexDirection: 'row',
@@ -112,21 +164,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#ACCAC8',
     marginBottom: 27,
     borderRadius: 10,
-    marginLeft:width * 0.03,
-    marginRight:width * 0.03,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.2, 
-    shadowRadius: 9, 
-    elevation: 9, 
+    marginLeft: width * 0.03,
+    marginRight: width * 0.03,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 9,
+    elevation: 9,
   },
-    projectDetails: {
+  projectDetails: {
     flex: 1,
   },
-    projectID: {
+  projectID: {
     color: 'black',
     fontSize: 15,
-    fontWeight: 'bold',
   },
   CityCountry: {
     color: 'black',
@@ -143,32 +194,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: height * 0.04,
     right: width * 0.05,
-  },
-  button: {
-    backgroundColor: '#48938F',
-    paddingVertical: height * 0.016,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: height * 0.3,
-    marginRight:width * 0.03,
-    marginLeft:width * 0.03,
-    borderWidth:2,
-    borderColor:"black"
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  plusSign: {
     color: 'black',
-    fontSize: 28,
-    marginRight: 9,
-    fontWeight:"bold"
-  },
-  buttonText: {
-    color: 'black',
-    fontSize: 22,
-    fontWeight: 'bold',
   },
   scrollViewContent: {
     paddingBottom: height * 0.05,
@@ -178,6 +204,32 @@ const styles = StyleSheet.create({
     color: 'gray',
     fontSize: 16,
     marginTop: height * 0.3,
+  },
+  button: {
+    backgroundColor: '#48938F',
+    paddingVertical: height * 0.016,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: height * 0.3,
+    marginRight: width * 0.03,
+    marginLeft: width * 0.03,
+    borderWidth: 2,
+    borderColor: 'black',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  plusSign: {
+    color: 'black',
+    fontSize: 28,
+    marginRight: 9,
+    fontWeight: 'bold',
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
 });
 

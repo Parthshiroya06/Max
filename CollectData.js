@@ -1,6 +1,6 @@
-import React, { useState , useEffect , route} from 'react';
+import React, { useState , useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView , Platform, PermissionsAndroid, Alert , Image} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView , Platform, PermissionsAndroid, Alert , Image , Dimensions} from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import CheckBox from '@react-native-community/checkbox';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -8,19 +8,14 @@ import { launchCamera} from 'react-native-image-picker';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import Dialog from 'react-native-dialog'; 
-import {useRoute } from '@react-navigation/native';
-import { useUploadStatus } from './UploadStatusProvider';
+import {useRoute , useFocusEffect} from '@react-navigation/native';
 
 const CollectScreen = () => {
   const [selectedHabitats, setSelectedHabitats] = useState([]);
-  const [selectedSubstrates, setSelectedSubstrates] = useState([]);
+  const [selectedSubstrates, setSelectedSubstrates] = useState([]); 
   const [selectedWaterTypes, setSelectedWaterTypes] = useState([]);
   const [selectedGeology, setSelectedGeology] = useState([]);
   const [coordinates, setCoordinates] = useState(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isSubstrateExpanded, setIsSubstrateExpanded] = useState(false);
-  const [isWaterExpanded, setIsWaterExpanded] = useState(false);
-  const [isGeologyExpanded, setIsGeologyExpanded] = useState(false);
   const habitats = ["Pond", "Lake", "Ditch", "Creek", "River", "Spring", "Cave", "Artificial Habitat"];
   const substrates = ["Rock", "Sand", "Vegetation", "Plastic", "Man-made"];
   const waterTypes = ["Fresh", "Brackish", "Marine", "Fast flow", "Medium", "Stagnant", "High turbidity", "Medium turbidity", "Clear"];
@@ -35,8 +30,6 @@ const CollectScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [expandedBox, setExpandedBox] = useState(null);
- 
-  // New fields for Locality Designation, Landmark, Vials, Morphs, Observation, Temperature, Hardness, pH
   const [localityDesignation, setLocalityDesignation] = useState('');
   const [landmarkNearby, setLandmarkNearby] = useState('');
   const [numOfVials, setNumOfVials] = useState('');
@@ -46,9 +39,6 @@ const CollectScreen = () => {
   const [hardness, setHardness] = useState('');
   const [pH, setPH] = useState('');
   const [additional, setAdditional] = useState('');
-  //const { uploadedNotes, setUploadedNotes } = useUploadStatus();
-  const [uploadedNotes, setUploadedNotes] = useState([]);
-  
 
 
   useEffect(() => {
@@ -78,22 +68,37 @@ const CollectScreen = () => {
     setPH(note.pH || '');
   };
 
-  useEffect(() => {
+  useFocusEffect(
+  React.useCallback(() => {
     const loadExistingNote = async () => {
-      const existingNotes = await AsyncStorage.getItem('notes');
-      let notes = existingNotes ? JSON.parse(existingNotes) : [];
-  
-      if (route.params?.note) {
-        loadNoteData(route.params.note);
-      } else if (notes.length > 0) {
-        loadNoteData(notes[notes.length - 1]); // Load the last note if no specific note to edit
+      try {
+        const existingNotes = await AsyncStorage.getItem('notes');
+        let notes = existingNotes ? JSON.parse(existingNotes) : [];
+        //console.log("Loading specific : ", existingNotes);
+        // console.log("Loading : ", notes);
+        // If route.params?.note exists, load that specific note
+        if (route.params?.note) {
+          console.log("Loading specific note: ", route.params.note);
+          loadNoteData(route.params.note);
+        } 
+        // Otherwise, load the last note from AsyncStorage if available
+        else if (notes.length > 0) {
+          console.log("Loading last note from existing notes: ", notes[notes.length - 1]);
+          loadNoteData(notes[notes.length - 1]);
+        } else {
+          console.log("No notes available");
+        }
+      } catch (error) {
+        console.error("Error loading notes from AsyncStorage: ", error);
       }
     };
-  
-    loadExistingNote();
-  }, [route.params?.note]);
-  
 
+    // Run the loadExistingNote function whenever the screen gains focus
+    loadExistingNote();
+
+  }, []) // Empty dependency array means it will run every time the screen is focused
+);
+  
   const toggleHabitat = (habitat) => {
     if (selectedHabitats.includes(habitat)) {
       setSelectedHabitats(selectedHabitats.filter((item) => item !== habitat));
@@ -159,143 +164,171 @@ const CollectScreen = () => {
         );
       };
 
-
        // Function to validate form fields
   const validateForm = () => {
     // Example of required fields check
     if (!coordinates) {
-      Alert.alert('Validation Error', 'Please capture GPS coordinates.');
+      //Alert.alert('Validation Error', 'Please capture GPS coordinates.');
       return false;
     }
     if (!localityDesignation || !landmarkNearby) {
-      Alert.alert('Validation Error', 'Please enter locality designation and landmark.');
+      //Alert.alert('Validation Error', 'Please enter locality designation and landmark.');
       return false;
     }
     if (!numOfVials || !morphs) {
-      Alert.alert('Validation Error', 'Please specify the number of vials and morphs.');
+      //Alert.alert('Validation Error', 'Please specify the number of vials and morphs.');
       return false;
     }
     if (!temperature || !hardness || !pH) {
-      Alert.alert('Validation Error', 'Please enter temperature, hardness, and pH.');
+     // Alert.alert('Validation Error', 'Please enter temperature, hardness, and pH.');
       return false;
     }
     if (selectedHabitats.length === 0) {
-      Alert.alert('Validation Error', 'Please select at least one habitat.');
+      //Alert.alert('Validation Error', 'Please select at least one habitat.');
       return false;
     }
     if (selectedSubstrates.length === 0) {
-      Alert.alert('Validation Error', 'Please select at least one substrate.');
+      //Alert.alert('Validation Error', 'Please select at least one substrate.');
       return false;
     }
     if (images.length === 0) {
-      Alert.alert('Validation Error', 'Please add at least one vial picture.');
+      //Alert.alert('Validation Error', 'Please add at least one vial picture.');
       return false;
     }
-    // Add other field validations as needed
+    
 
-    return true; // All validations passed
+    return true; 
   };
 
 
 
   const teamMembers = ['Sam Turner', 'Elizabeth Schmidt', 'David Schulz']; // Team names
     
-  // Function to generate random ID
-  const generateSerialID = (() => {
-    let currentID = 0;
-    return () => {
-      currentID = (currentID % 5) + 1; // Cycles from 1 to 5
-      return currentID;
-    };
-  })();
+  const handleSubmit = async () => {
+    const projectId = route.params?.projectId;
 
-      // Function to add a new note
-      const handleSubmit = async () => {
-        // Validate the form first
-        if (!validateForm()) {
-          return; // Stop execution if validation fails
-        }
+    // Log the projectId for debugging
+    console.log('Project ID:', projectId);
+  
+    if (!validateForm()) {
+      return; // Stop execution if validation fails
+    }
+  
+    try {
+      // Retrieve existing notes for the project from AsyncStorage
+      const existingNotesData = await AsyncStorage.getItem(projectId);
+      const notes = existingNotesData ? JSON.parse(existingNotesData) : [];
     
-        // Generate random notes names and userName if this is a new note
-        const randomDate = `Note0${generateSerialID()}`;
-        const randomUserName = `Edited by ${teamMembers[Math.floor(Math.random() * teamMembers.length)]}`;
-    
-        // Create the new note object from the form data
-  const newNote = {
-    id: route.params?.note?.id || generateSerialID(),
-    date: randomDate,
-    userName: randomUserName,
-    selectedHabitats: selectedHabitats || [],  // Default to empty array
-    selectedSubstrates: selectedSubstrates || [],
-    selectedWaterTypes: selectedWaterTypes || [],
-    selectedGeology: selectedGeology || [],
-    coordinates: coordinates || null,  // Default to null if undefined
-    abundance: abundance || 0,
-    images: images || [],
-    imagess: imagess || [],
-    localityDesignation: localityDesignation || '',
-    landmarkNearby: landmarkNearby || '',
-    numOfVials: numOfVials || '',
-    morphs: morphs || '',
-    observation: observation || '',
-    temperature: temperature || '',
-    hardness: hardness || '',
-    pH: pH || '',
-    additional: additional || ''
-  };
-        try {
+      // Log the retrieved notes for debugging
+      console.log('Existing Notes:', notes);
 
-          setUploadedNotes([...uploadedNotes || [], newNote]);
-          // Retrieve the existing notes from AsyncStorage
-          const existingNotes = await AsyncStorage.getItem('notes');
-          let notes = existingNotes ? JSON.parse(existingNotes) : [];
-    
-          // If we're editing an existing note, find and replace it
-          if (route.params?.note) {
-            // const updatedNotes = notes.map(existingNote =>
-            //   existingNote.date === route.params.note.date ? newNote : existingNote
-            // );
-            // await AsyncStorage.setItem('notes', JSON.stringify(updatedNotes));
-            notes = notes.map(note => (note.id === newNote.id ? newNote : note));
-          } else {
-            // If this is a new note, add it to the array
-            notes.push(newNote);
-            //await AsyncStorage.setItem('notes', JSON.stringify(notes));
-          }
-           
-          await AsyncStorage.setItem('notes', JSON.stringify(notes));
-          // Navigate back to the ProjectDetails screen with the new or updated note
-          navigation.navigate('ProjectDetails', { newNote });
-        } catch (error) {
-          console.error('Error saving note to AsyncStorage:', error);
-        }
+
+      // Determine the note number
+      const noteNumber = route.params?.note
+        ? route.params.note.Serial // If editing, keep the same Serial
+        : `Note 0${notes.length + 1}`; // New note gets the next number
+
+        console.log('noteNumber:', noteNumber);
+  
+  
+      // Generate userName and create the new note object
+      const randomUserName = `Edited by ${teamMembers[Math.floor(Math.random() * teamMembers.length)]}`;
+      const newNote = {
+        id: route.params?.note?.id || `${projectId}-Note-${noteNumber}`, // Ensure unique ID
+        Serial: noteNumber, // Use the determined note number
+        userName: randomUserName,
+        selectedHabitats: selectedHabitats || [],
+        selectedSubstrates: selectedSubstrates || [],
+        selectedWaterTypes: selectedWaterTypes || [],
+        selectedGeology: selectedGeology || [],
+        coordinates: coordinates || null,
+        abundance: abundance || 0,
+        images: images.map((img, index) => ({
+          uri: img.uri,
+          name: img.name || `Image-${index + 1}`, // Default name if not set
+          sizeMB: img.sizeMB || 0,
+        })), // Save with metadata
+        //imagess: imagess || [], // Additional images (e.g., habitat images)
+        imagess: imagess.map((img, index) => ({
+          uri: img.uri,
+          name: img.name || `Image-${index + 1}`, // Default name if not set
+          sizeMB: img.sizeMB || 0,
+        })), // Save with metadata
+        localityDesignation: localityDesignation || '',
+        landmarkNearby: landmarkNearby || '',
+        numOfVials: numOfVials || '',
+        morphs: morphs || '',
+        observation: observation || '',
+        temperature: temperature || '',
+        hardness: hardness || '',
+        pH: pH || '',
+        additional: additional || '',
       };
+  
        
-        const openCameravial = async () => {
-          const options = {
-            mediaType: 'photo',
-            cameraType: 'back',
-            quality: 1,
-          };
+       // Log the new note object for debugging
+       console.log('New Note Object:', newNote);
+
+
+
+      if (route.params?.note) {
+        // Update existing note
+        const updatedNotes = notes.map((note) =>
+          note.Serial === route.params.note.Serial ? newNote : note
+        );
+        await AsyncStorage.setItem(projectId, JSON.stringify(updatedNotes));
+      } else {
+        // Add new note
+        notes.push(newNote);
+        await AsyncStorage.setItem(projectId, JSON.stringify(notes));
+      }
+  
+      // Trigger callback if provided
+      if (route.params?.onNewNoteAdded) {
+        route.params.onNewNoteAdded(newNote);
+      }
+  
+      // Navigate back to the ProjectDetails screen
+      navigation.navigate('ProjectDetails', { projectId });
+    } catch (error) {
+      console.error('Error saving note to AsyncStorage:', error);
+    }
+  };
+  
+  
+  const openCameravial = async () => {
+    const options = {
+      mediaType: 'photo',
+      cameraType: 'back',
+      quality: 1,
+    };
+  
+    try {
+      const result = await launchCamera(options);
+      if (result.didCancel) {
+        console.log('User cancelled camera');
+      } else if (result.errorCode) {
+        console.error('Camera error: ', result.errorCode);
+        Alert.alert('Camera Error', result.errorMessage);
+      } else if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2); // Convert fileSize to MB
         
-          try {
-            const result = await launchCamera(options);
-            if (result.didCancel) {
-              console.log('User cancelled camera');
-            } else if (result.errorCode) {
-              console.error('Camera error: ', result.errorCode);
-              Alert.alert('Camera Error', result.errorMessage);
-            } else if (result.assets && result.assets.length > 0) {
-              // Assuming you want to store the first image only
-              const newImage = { uri: result.assets[0].uri }; // Get the URI from the result
-              setImages([...images, newImage]); // Update images state
-              setDialogVisible(true);
-            }
-          } catch (error) {
-            console.error('Error opening camera: ', error);
-            Alert.alert('Error', 'Failed to open camera');
-          }
+        const newImage = {
+          uri: asset.uri,
+          name: customImageName.trim() || 'Unnamed Image',
+          sizeMB: sizeInMB,
         };
+  
+        setImages([...images, newImage]); // Add the new image to the images state
+        setDialogVisible(true); // Open dialog to set name if needed
+      }
+    } catch (error) {
+      console.error('Error opening camera: ', error);
+      Alert.alert('Error', 'Failed to open camera');
+    }
+  };
+  
         
     
         const handlevialSaveImage = () => {
@@ -368,8 +401,8 @@ const CollectScreen = () => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => console.log('Back pressed')} style={styles.backIconContainer}>
-            <Text style={styles.backIcon}>{'<'}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('CollectScreen2')} style={styles.backIconContainer}>
+            <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>
           <Text style={styles.header}>Sampling Field Notes</Text>
         </View>
@@ -377,7 +410,7 @@ const CollectScreen = () => {
         {/* Location Section */}
         <Text style={styles.sectionHeader}>Location</Text>
         <View style={styles.separator} />
-        <TextInput style={styles.input} placeholder="Locality Designation" value={localityDesignation} onChangeText={setLocalityDesignation} />
+        <TextInput style={styles.input} placeholder="Locality Designation"  placeholderTextColor="gray" value={localityDesignation} onChangeText={setLocalityDesignation} />
         <TextInput style={styles.input} placeholder="Landmark Nearby" value={landmarkNearby} onChangeText={setLandmarkNearby}  />
 
         {coordinates && (
@@ -399,7 +432,7 @@ const CollectScreen = () => {
         {/* Planarians Section */}
         <Text style={styles.sectionHeader}>Planarians</Text>
         <View style={styles.separator} />
-        <TextInput style={styles.input} placeholder="No. of Vials" keyboardType="numeric" value={numOfVials} onChangeText={setNumOfVials}/>
+        <TextInput style={styles.input} placeholder="No. of Vials" value={numOfVials} onChangeText={setNumOfVials}/>
         <TextInput style={styles.input} placeholder="Morphs" value={morphs} onChangeText={setMorphs}/>
 
         <Text style={styles.label}>Abundance</Text>
@@ -438,15 +471,34 @@ const CollectScreen = () => {
   style={styles.habitatPicturesContainer}
   onPress={() => {
     const randomSize = (Math.random() * (9 - 3) + 3).toFixed(1);  // Generates a random number between 3 and 9 with one decimal place
-    navigation.navigate('VialPicture', { 
-      selectedImage: images[0], 
-      imageName: images[0].name,  // Replace with the actual image name if available
-      imageSizeMB: randomSize  // Randomly generated image size
-    });
+
+    // Log projectId to ensure it is defined
+   
+    const projectId = route.params?.projectId;
+    
+    console.log('projectIdcgh:', projectId);
+    const noteNumber = route.params?.note
+        ? route.params.note.Serial // If editing, keep the same Serial
+        : `Note 0${notes.length + 1}`; // New note gets the next number
+
+        console.log('noteNumber:', noteNumber);
+
+    // Check if projectId exists before navigating
+    if (projectId) {
+      navigation.navigate('VialPicture', { 
+        projectId: projectId,        // Pass the project ID
+        serial: noteNumber,   
+        //selectedImage: images[0], 
+        //imageName: images[0].name,  // Replace with the actual image name if available
+        //imageSizeMB: randomSize  // Randomly generated image size
+      });
+    } else {
+      console.error('Project ID is not defined!');
+    }
   }}
-  
-  
 >
+
+
   {/* Display the image(s) */}
   {images.map((image, index) => (
     <Image key={index} source={image} style={styles.imageIcon} />
@@ -474,7 +526,7 @@ const CollectScreen = () => {
 
         <Text style={styles.label}>Habitat pictures </Text>
         {/* Conditionally render camera icon or image preview */}
-{imagess.length <= 2 ? (
+{imagess.length === 0 ? (
   <TouchableOpacity style={styles.pictureContainer} onPress={openCameraHabitat}>
     <Text style={styles.placeholderText}>No Photos added</Text>
     <Text style={styles.cameraIcon}>📷</Text>
@@ -485,11 +537,34 @@ const CollectScreen = () => {
   onPress={() => {
      // Generate a random size for each image, with two decimal places
      const randomSizes = imagess.map(() => (Math.random() * (9 - 3) + 3).toFixed(1));  
-    navigation.navigate('HabitatPicture', { 
-      selectedImages: imagess, 
-      imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
-      imageSizeMBs: randomSizes  // Randomly generated image size
-    });
+    // navigation.navigate('HabitatPicture', { 
+    //   projectId: projectId,        // Pass the project ID
+    //     serial: noteNumber,  
+    //   //selectedImages: imagess, 
+    //   //imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
+    //   //imageSizeMBs: randomSizes  // Randomly generated image size
+    // });
+    const projectId = route.params?.projectId;
+    
+    console.log('projectIdcgh:', projectId);
+    const noteNumber = route.params?.note
+        ? route.params.note.Serial // If editing, keep the same Serial
+        : `Note 0${notes.length + 1}`; // New note gets the next number
+
+        console.log('noteNumber:', noteNumber);
+
+    // Check if projectId exists before navigating
+    if (projectId) {
+      navigation.navigate('HabitatPicture', { 
+        projectId: projectId,        // Pass the project ID
+        serial: noteNumber,   
+        //selectedImage: images[0], 
+        //imageName: images[0].name,  // Replace with the actual image name if available
+        //imageSizeMB: randomSize  // Randomly generated image size
+      });
+    } else {
+      console.error('Project ID is not defined!');
+    }
   }}
   
   
@@ -527,14 +602,15 @@ const CollectScreen = () => {
         <View style={styles.habitatContainer}>
           <View style={styles.habitatDescriptionBox}>
             <View style={styles.selectedHabitatsContainer}>
-              <View style={styles.selectedHabitatsWrapper}>
-                {selectedHabitats.map((habitat, index) => (
-                  <Text key={index} style={styles.habitatTag}>{habitat}</Text>
-                ))}
-                {selectedHabitats.length > 4 && !isExpanded && (
-                  <Text style={styles.additionalText}>+{selectedHabitats.length - 4}</Text>
-                )}
-              </View>
+            <View style={styles.selectedHabitatsWrapper}>
+  {selectedHabitats.slice(0, 3).map((habitat, index) => (
+    <Text key={index} style={styles.habitatTag}>{habitat}</Text>
+  ))}
+  {selectedHabitats.length > 3 && (
+    <Text style={styles.additionalText}>+{selectedHabitats.length - 3}</Text>
+  )}
+</View>
+
               <TouchableOpacity onPress={() => toggleExpand('habitats')}>
               <Icon name={expandedBox === 'habitats' ? "expand-less" : "expand-more"} size={29} color="black" />
               </TouchableOpacity>
@@ -546,6 +622,7 @@ const CollectScreen = () => {
                     <CheckBox
                       value={selectedHabitats.includes(habitat)}
                       onValueChange={() => toggleHabitat(habitat)}
+                      tintColors={{ true: '#48938F', false: '#000000' }}
                       style={styles.checkbox}
                     />
                     <Text style={styles.habitatText}>{habitat}</Text>
@@ -563,13 +640,13 @@ const CollectScreen = () => {
           <View style={styles.habitatDescriptionBox}>
             <View style={styles.selectedHabitatsContainer}>
               <View style={styles.selectedHabitatsWrapper}>
-                {selectedSubstrates.map((substrates, index) => (
-                  <Text key={index} style={styles.habitatTag}>{substrates}</Text>
-                ))}
-                {selectedSubstrates.length > 4 && !isSubstrateExpanded && (
-                  <Text style={styles.additionalText}>+{selectedSubstrates.length - 4}</Text>
-                )}
-              </View>
+  {selectedSubstrates.slice(0, 3).map((substrates, index) => (
+    <Text key={index} style={styles.habitatTag}>{substrates}</Text>
+  ))}
+  {selectedSubstrates.length > 3 && (
+    <Text style={styles.additionalText}>+{selectedSubstrates.length - 3}</Text>
+  )}
+</View>
               <TouchableOpacity onPress={() => toggleExpand('substrates')}>
               <Icon name={expandedBox === 'substrates' ? "expand-less" : "expand-more"} size={29} color="black" />
               </TouchableOpacity>
@@ -581,6 +658,7 @@ const CollectScreen = () => {
                     <CheckBox
                       value={selectedSubstrates.includes(substrates)}
                       onValueChange={() => toggleSubstrate(substrates)}
+                      tintColors={{ true: '#48938F', false: '#000000' }}
                       style={styles.checkbox}
                     />
                     <Text style={styles.habitatText}>{substrates}</Text>
@@ -598,13 +676,13 @@ const CollectScreen = () => {
           <View style={styles.habitatDescriptionBox}>
             <View style={styles.selectedHabitatsContainer}>
               <View style={styles.selectedHabitatsWrapper}>
-                {selectedWaterTypes.map((waterTypes, index) => (
-                  <Text key={index} style={styles.habitatTag}>{waterTypes}</Text>
-                ))}
-                {selectedWaterTypes.length > 4 && !isWaterExpanded && (
-                  <Text style={styles.additionalText}>+{selectedWaterTypes.length - 4}</Text>
-                )}
-              </View>
+  {selectedWaterTypes.slice(0, 3).map((waterTypes, index) => (
+    <Text key={index} style={styles.habitatTag}>{waterTypes}</Text>
+  ))}
+  {selectedWaterTypes.length > 3 && (
+    <Text style={styles.additionalText}>+{selectedWaterTypes.length - 3}</Text>
+  )}
+</View>
               <TouchableOpacity onPress={() => toggleExpand('waterTypes')}>
               <Icon name={expandedBox === 'WaterTypes' ? "expand-less" : "expand-more"} size={29} color="black" />
               </TouchableOpacity>
@@ -616,6 +694,7 @@ const CollectScreen = () => {
                 <CheckBox
                   value={selectedWaterTypes.includes(waterTypes)}
                   onValueChange={() => toggleWater(waterTypes)}
+                  tintColors={{ true: '#48938F', false: '#000000' }}
                   style={styles.checkbox}
                 />
                 <Text style={styles.habitatText}>{waterTypes}</Text>
@@ -633,13 +712,13 @@ const CollectScreen = () => {
           <View style={styles.habitatDescriptionBox}>
             <View style={styles.selectedHabitatsContainer}>
               <View style={styles.selectedHabitatsWrapper}>
-                {selectedGeology.map((geologyTypes, index) => (
-                  <Text key={index} style={styles.habitatTag}>{geologyTypes}</Text>
-                ))}
-                {selectedGeology.length > 4 && !isGeologyExpanded && (
-                  <Text style={styles.additionalText}>+{selectedGeology.length - 4}</Text>
-                )}
-              </View>
+  {selectedGeology.slice(0, 3).map((geologyTypes, index) => (
+    <Text key={index} style={styles.habitatTag}>{geologyTypes}</Text>
+  ))}
+  {selectedGeology.length > 3 && (
+    <Text style={styles.additionalText}>+{selectedGeology.length - 3}</Text>
+  )}
+</View>
               <TouchableOpacity onPress={() => toggleExpand('geologyTypes')}>
               <Icon name={expandedBox === 'geologyTypes' ? "expand-less" : "expand-more"} size={29} color="black" />
               </TouchableOpacity>
@@ -651,6 +730,7 @@ const CollectScreen = () => {
                 <CheckBox
                   value={selectedGeology.includes(geologyTypes)}
                   onValueChange={() => toggleGeology(geologyTypes)}
+                  tintColors={{ true: '#48938F', false: '#000000' }}
                   style={styles.checkbox}
                 />
                 <Text style={styles.habitatText}>{geologyTypes}</Text>
@@ -661,7 +741,7 @@ const CollectScreen = () => {
           </View>
         </View>
 
-        <TextInput style={styles.input} placeholder="Temperature" keyboardType="numeric" value={temperature} onChangeText={setTemperature}/>
+        <TextInput style={styles.input} placeholder="Temperature" value={temperature} onChangeText={setTemperature}/>
         <View style={styles.measurementContainer}>
   <TextInput
     style={styles.measurementBox}
@@ -673,7 +753,6 @@ const CollectScreen = () => {
   <TextInput
     style={styles.measurementBox}
     placeholder="pH"
-    keyboardType="numeric"
     value={pH} 
     onChangeText={setPH}
   />
@@ -682,7 +761,7 @@ const CollectScreen = () => {
 <Text style={styles.label}>Additional Notes</Text>
 <TextInput style={[styles.input, styles.observationsInput]} placeholder="E.g. Blastemas, eggs, etc ..." multiline numberOfLines={6} value={additional} onChangeText={setAdditional}/>
 
-<TouchableOpacity style={styles.button} onPress={handleSubmit}>
+<TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={!validateForm()}>
           <Text style={styles.buttonText}>Submit</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -690,103 +769,136 @@ const CollectScreen = () => {
   );
 };
 
+const { width, height } = Dimensions.get('window');
+
+// Helper for scaling sizes
+const scaleSize = (size) => size * (width / 375); // 375 is base screen width
+
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ACCAC8',
   },
   scrollViewContent: {
-    padding: 20,
+    //padding: 20,
+    padding: scaleSize(20),
     flexGrow: 1,
-    paddingBottom: 100,
+    //paddingBottom: 100,
+    paddingBottom: scaleSize(50),
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    //marginBottom: 6,
+    marginBottom: scaleSize(6)
   },
   backIconContainer: {
     position: 'absolute',
     left: 0,
-    marginLeft: 9,
+    //marginLeft: 9,
+    marginLeft: scaleSize(9),
   },
   header: {
-    fontSize: 22,
+    //fontSize: 22,
+    fontSize: scaleSize(22),
     fontWeight: 'bold',
     color: 'black',
     fontFamily: 'Playfair Display',
   },
   backIcon: {
-    fontSize: 45,
+   // fontSize: 45,
+   fontSize: scaleSize(45),
     fontWeight: 'bold',
     color: 'black',
   },
   sectionHeader: {
-    fontSize: 18,
+    //fontSize: 18,
+    fontSize: scaleSize(18),
     fontWeight: 'bold',
-    marginTop: 28,
+    //marginTop: 28,
+    marginTop: scaleSize(28),
     color: '#000000',
-    marginLeft: 5,
+   // marginLeft: 5,
+   marginLeft: scaleSize(5),
     fontFamily: 'Playfair Display',
   },
   separator: {
-    height: 2,
+    //height: 2,
+    height: scaleSize(2),
     backgroundColor: '#000000',
-    marginVertical: 10,
+   // marginVertical: 10,
+   marginVertical: scaleSize(10),
   },
   label: {
-    fontSize: 18,
+    //fontSize: 18,
+    fontSize: scaleSize(18),
     color: '#000000',
-    marginBottom: 15,
+    //marginBottom: 15,
+    marginBottom: scaleSize(15),
     fontWeight: 'bold',
-    marginLeft: 5,
-    marginTop: 15,
+    // marginLeft: 5,
+    // marginTop: 15,
+    marginLeft: scaleSize(5),
+    marginTop: scaleSize(15),
   },
   input: {
-    height: 67,
+    //height: 67,
+    height: scaleSize(67),
     borderColor: 'black',
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 17,
-    marginTop: 15,
+    // borderRadius: 10,
+    // padding: 17,
+    // marginTop: 15,
+    borderRadius: scaleSize(10),
+    padding: scaleSize(17),
+    marginTop: scaleSize(15),
     backgroundColor: '#FFF',
+    color: 'black', 
   },
   coordinatesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 28, // adjust if needed to fit nicely above the button
-    marginBottom:-6
+    // marginTop: 28, // adjust if needed to fit nicely above the button
+    // marginBottom:-6
+    marginTop: scaleSize(28),
+    marginBottom: scaleSize(-6),
   },
   coordinatesText: {
-    fontSize: 16,
+    //fontSize: 16,
+    fontSize: scaleSize(16),
     fontWeight: 'bold',
     color: 'black',
-    marginHorizontal: 6, // reduce space between Latitude and Longitude
+   // marginHorizontal: 6, // reduce space between Latitude and Longitude
+   marginHorizontal: scaleSize(6),
   },
   coordinatesValue: {
-    color: 'gray', // color for the actual coordinates
+    color: 'black', // color for the actual coordinates
   },
   
   observationsInput: {
-    height: 125,
+    height: 160,
     textAlignVertical: 'top',
     marginTop:2
   },
   button: {
-    width: 346,
-    height: 55,
+    width: width * 0.9, // 90% of screen width
+    height: height * 0.07, // 7% of screen height
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 30,
+    marginVertical: height * 0.03, // 3% of screen height
     backgroundColor: 'black',
+    marginRight: width * 0.04, // 4% of screen width
   },
   buttonText: {
     color: '#FFF',
-    fontSize: 16,
+    //fontSize: 16,
+    fontSize: scaleSize(16),
     fontWeight: 'bold',
   },
   pictureContainer: {
@@ -847,6 +959,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    
+    
   },
   selectedHabitatsWrapper: {
     flexDirection: 'row',
@@ -874,9 +988,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
+    
   },
   checkbox: {
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
   },
   habitatText: {
     fontSize: 17,
@@ -936,7 +1053,6 @@ imageIcon: {
   marginBottom:-2,
   marginLeft:0
 },
-
   
 });
 

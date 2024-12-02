@@ -1,172 +1,87 @@
-// import React, { useEffect, useState } from 'react';
-// import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-// import { useNavigation, useRoute } from '@react-navigation/native';
-// import Icon from 'react-native-vector-icons/MaterialIcons';
-// import { useUploadStatus } from './UploadStatusProvider';
-
-// const CollectScreen = () => {
-//   const navigation = useNavigation();
-//   const route = useRoute();
-//   const { width } = Dimensions.get('window');
-  
-//   // Correctly destructuring the values from useUploadStatus
-//   const { isUploaded, setIsUploaded } = useUploadStatus(); 
-//   const [uploadedNotes, setUploadedNotes] = useState([]);
-
-//   const projectDetails = {
-//     id: '#projectid01',
-//     timeFrame: '25th Oct - 25th Nov',
-//     country: 'India',
-//     city: 'Bhopal',
-//   };
-
-//   useEffect(() => {
-//     if (route.params?.uploadedNotes) {
-//       setUploadedNotes(route.params.uploadedNotes);
-//     }
-//   }, [route.params?.uploadedNotes]);
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={[styles.projectDetails, { fontSize: width > 400 ? 24 : 20 }]}>Projects</Text>
-
-//       <TouchableOpacity
-//         style={[styles.middleSection, isUploaded && styles.disabled]}
-//         onPress={() => navigation.navigate('ProjectDetails', { uploadedNotes })} 
-//       >
-//         <View style={styles.projectInfoContainer}>
-//           <Text style={[styles.projectInfo, { fontSize: width > 400 ? 18 : 16 }]}>{projectDetails.id}</Text>
-//           <Text style={[styles.projectInfo, { fontSize: width > 400 ? 18 : 16 }]}>
-//             <Text style={styles.boldText}>{projectDetails.city}, {projectDetails.country}</Text>
-//           </Text>
-//           <Text style={[styles.projectInfo, { fontSize: width > 400 ? 18 : 16 }]}>{projectDetails.timeFrame}</Text>
-
-//           <View style={styles.statusIcon}>
-//             {isUploaded ? (
-//               <Icon name="cloud-done" size={28} color="black" />
-//             ) : (
-//               <Icon name="pending-actions" size={28} color="black" />
-//             )}
-//           </View>
-//         </View>
-//       </TouchableOpacity>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'flex-start',
-//     alignItems: 'center',
-//     backgroundColor: 'white',
-//     paddingHorizontal: '5%',
-//   },
-//   projectDetails: {
-//     fontWeight: 'bold',
-//     color: 'black',
-//     marginBottom: 20,
-//     textAlign: 'center',
-//   },
-//   middleSection: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'space-between',
-//     width: '100%',
-//     borderWidth: 1,
-//     borderColor: 'white',
-//     marginTop: 20,
-//     borderRadius: 10,
-//     backgroundColor: '#ACCAC8',
-//     padding: '4%',
-//   },
-//   projectInfoContainer: {
-//     flex: 1,
-//     width: '90%',
-//     paddingHorizontal: 15,
-//     height: 110,
-//   },
-//   projectInfo: {
-//     marginBottom: 0,
-//     color: '#000000',
-//     marginTop: 12,
-//   },
-//   boldText: {
-//     fontWeight: 'bold',
-//   },
-//   statusIcon: {
-//     position: 'absolute',
-//     top: 10,
-//     right: 10,
-//     fontSize: 24,
-//     color: 'black',
-//   },
-// });
-
-// export default CollectScreen;
-
-
-
-
-
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Dimensions } from 'react-native';
-import { useNavigation , useRoute} from '@react-navigation/native';
+import React, {useEffect, useState, useCallback} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUploadStatus } from './UploadStatusProvider';
+import {useUploadStatus} from './UploadStatusProvider';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const CollectScreen = () => {
-  const navigation = useNavigation();
-  const [projects, setProjects] = useState([]);
+  const navigation = useNavigation(); // Hook to handle navigation
+  const route = useRoute(); // Hook to access route parameters
+  const [projects, setProjects] = useState([]); // State to store project data
+  const {getProjectStatus} = useUploadStatus(); // Use the project status function from UploadStatusProvider
+  const [uploadedNotes, setUploadedNotes] = useState([]); // State to store uploaded notes
 
-    //Correctly destructuring the values from useUploadStatus
-  const { isUploaded, setIsUploaded } = useUploadStatus(); 
-  const [uploadedNotes, setUploadedNotes] = useState([]);
-  const route = useRoute();
+  // Load projects from AsyncStorage and update the projects array
+  const loadProjects = useCallback(async () => {
+    try {
+      const storedProjects = await AsyncStorage.getItem('projects');
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects);
 
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const storedProjects = await AsyncStorage.getItem('projects');
-        if (storedProjects) {
-          setProjects(JSON.parse(storedProjects));
-        }
-      } catch (error) {
-        console.error('Error loading projects from AsyncStorage:', error);
+        // Update each project's status based on upload state
+        const projectsWithStatus = parsedProjects.map(project => ({
+          ...project,
+          isUploaded: getProjectStatus(project.id), // Check if the project is uploaded
+        }));
+        setProjects(projectsWithStatus); // Update the state with the projects and their status
       }
-    };
+    } catch (error) {
+      console.error('Error loading projects from AsyncStorage:', error);
+    }
+  }, [getProjectStatus]);
 
-    loadProjects();
-  }, []);
+  // Load projects whenever the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadProjects();
+    }, [loadProjects]),
+  );
 
-
-
+  // Set uploaded notes from route params if available
   useEffect(() => {
     if (route.params?.uploadedNotes) {
       setUploadedNotes(route.params.uploadedNotes);
     }
   }, [route.params?.uploadedNotes]);
 
-
-
-  const renderProject = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.projectItem, isUploaded && styles.disabled]}
-      onPress={() => navigation.navigate('ProjectDetails', { uploadedNotes })}
-    >
+  // Render each project item in the list
+  const renderProject = ({item}) => (
+    <TouchableOpacity
+      style={[styles.projectItem, item.isUploaded && styles.disabled]}
+      onPress={() =>
+        navigation.navigate('ProjectDetails', {projectId: item.id})
+      }>
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
-        <Text style={styles.CityCountry}>{item.substrates.join(', ')}, {item.waterTypes.join(', ')}</Text>
+        <Text style={styles.CityCountry}>
+          {item.waterTypes.join(', ') || 'No water types'} ,{' '}
+          {item.country || 'No country'}
+        </Text>
         <Text style={styles.Date}>
-          {item.fromDate && item.toDate ? `${new Date(item.fromDate).toLocaleDateString()} - ${new Date(item.toDate).toLocaleDateString()}` : 'No date range'}
+          {item.fromDate && item.toDate
+            ? `${new Date(item.fromDate).toLocaleDateString()} - ${new Date(
+                item.toDate,
+              ).toLocaleDateString()}`
+            : 'No date range'}
         </Text>
       </View>
       <View style={styles.statusIcon}>
-        {isUploaded ? (
+        {item.isUploaded ? (
           <Icon name="cloud-done" size={28} color="black" />
         ) : (
           <Icon name="pending-actions" size={28} color="black" />
@@ -175,24 +90,25 @@ const CollectScreen = () => {
     </TouchableOpacity>
   );
 
-  
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home2')} style={styles.backIconContainer}>
-            <Text style={styles.backIcon}>{'<'}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            style={styles.backIconContainer}>
+            <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>
-          <Text style={styles.header}>Projects</Text>
+          <Text style={styles.header}> My Projects</Text>
         </View>
 
-
-        {/*  This FlatList renders the list of projects. */}
         <FlatList
           data={projects}
           renderItem={renderProject}
-          ListEmptyComponent={<Text style={styles.emptyComponent}>No projects available</Text>}
-          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyComponent}>No projects available</Text>
+          }
+          keyExtractor={item => item.id.toString()}
         />
       </View>
     </ScrollView>
@@ -209,24 +125,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: height * 0.05,
-    marginTop:height * 0.03,
-    marginRight:width * 0.03
+    marginTop: height * 0.03,
+    marginRight: width * 0.03,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'black',
     textAlign: 'center',
-    flex: 1, 
+    flex: 1,
   },
   backIconContainer: {
     paddingRight: 8,
-    marginLeft:width * 0.03
+    marginLeft: width * 0.03,
   },
   backIcon: {
     fontSize: 37,
     color: 'black',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   projectItem: {
     flexDirection: 'row',
@@ -236,21 +152,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#ACCAC8',
     marginBottom: 27,
     borderRadius: 10,
-    marginLeft:width * 0.03,
-    marginRight:width * 0.03,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.2, 
-    shadowRadius: 9, 
-    elevation: 9, 
+    marginLeft: width * 0.03,
+    marginRight: width * 0.03,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 9,
+    elevation: 9,
   },
-    projectDetails: {
+  projectDetails: {
     flex: 1,
   },
-    projectID: {
+  projectID: {
     color: 'black',
     fontSize: 15,
-    fontWeight: 'bold',
   },
   CityCountry: {
     color: 'black',
@@ -267,7 +182,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: height * 0.04,
     right: width * 0.05,
-    color:"black"
+    color: 'black',
   },
   scrollViewContent: {
     paddingBottom: height * 0.05,
@@ -281,4 +196,3 @@ const styles = StyleSheet.create({
 });
 
 export default CollectScreen;
-

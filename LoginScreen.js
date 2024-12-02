@@ -1,29 +1,40 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
-// Function to scale font sizes
-const scaleFont = (size) => {
-  const scale = width / 320; // Based on iPhone 5's width
+// Function to scale font sizes based on screen width
+const scaleFont = size => {
+  const scale = width / 320;
   return Math.round(size * scale);
 };
 
-const LoginScreen = ({ navigation }) => {
+// LoginScreen component
+const LoginScreen = ({navigation}) => {
+
+   // Function to handle login button press
+  const handleLogin = () => {
+    navigation.navigate('MainTabs'); 
+  };
+
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: 'logo4' }} // Ensure this is a valid image URL
+        source={{uri: 'logo4'}} // Ensure this is a valid image URL
         style={styles.image}
       />
-      <View style={styles.socialContainer}>
-        <TouchableOpacity
-          style={styles.socialButton}
-          onPress={() => navigation.navigate('MainTabs')}
-        >
-          <Text style={styles.emojiText}>🆘</Text>
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.welcomeText}>Welcome!</Text>
+      <Text style={styles.instituteText}>Max Planck Institute</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+        <Text style={styles.loginButtonText}>Login</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -32,32 +43,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    justifyContent: 'center', // Center content vertically
-    alignItems: 'center', // Center content horizontally
-    paddingHorizontal: width * 0.05, // 5% of screen width
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingHorizontal: width * 0.05, 
   },
   image: {
-    width: width * 0.4, // 40% of screen width
-    height: width * 0.4, // Maintain aspect ratio
+    width: width * 0.8, 
+    height: width * 0.8, 
     resizeMode: 'contain',
-    marginBottom: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02, 
     borderRadius: 30,
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center', // Center the emoji horizontally
-    alignItems: 'center', // Center the emoji vertically
-    marginBottom: height * 0.02, // 2% of screen height
-  },
-  socialButton: {
-    backgroundColor: 'red',
-    padding: height * 0.02, // Adjusted for responsive padding
-    borderRadius: 30,
-    alignItems: 'center', // Center the emoji in the button
-    justifyContent: 'center',
+    backgroundColor: 'white',
+    marginLeft: width * 0.03,
   },
   emojiText: {
-    fontSize: scaleFont(20), // Scale emoji size
+    fontSize: scaleFont(20), 
+  },
+  welcomeText: {
+    fontSize: scaleFont(29), 
+    fontWeight: 'bold',
+    color: 'black',
+    marginTop: height * 0.03, 
+    marginLeft: 10,
+  },
+  instituteText: {
+    fontSize: scaleFont(18), 
+    color: 'black',
+    fontWeight: 'bold',
+    marginTop: height * 0.005, 
+  },
+  loginButton: {
+    marginTop: height * 0.05, 
+    backgroundColor: '#48938F', 
+    paddingVertical: height * 0.015, 
+    paddingHorizontal: width * 0.09, 
+    alignItems: 'center', 
+    borderWidth: 1,
+    borderColor: 'black',
+  },
+  loginButtonText: {
+    fontSize: scaleFont(18), 
+    color: 'black',
+    fontWeight: 'bold',
   },
 });
 
