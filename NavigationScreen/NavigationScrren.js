@@ -4,19 +4,19 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import LoginScreen from './LoginScreen'; 
-import HomeScreen from './HomeScreen'; 
-import SetupScreen from './SetupScreen';
-import CollectScreen from './CollectScreen';
-import CollectData from './CollectData';
-import MapScreen from './MapsScreen';
-import HabitatPicturesScreen from './HabitatPicture';
-import VialPicture from './VialPicture';
-import SetupDetail from './SetupDetail';
-import ProjectDetails from './ProjectDetails';
-import UploadedData from './UploadedDataScreen';
-import VialPictureUplaoded from './VialPictureUplaoded';
-import HabitatPictureUploaded from './HabitatPictureUploaded';
+import SetupScreen from '../Screens/ProjectSetup/SetupScreen';
+import CollectScreen from '../Screens/DataCollection/CollectScreen';
+import ProjectDetails from '../Screens/DataCollection/ProjectDetails';
+import SetupDetail from '../Screens/ProjectSetup/SetupDetail';
+import CollectDataScreen from '../Screens/DataCollection/CollectData';
+import UploadedData from '../Screens/UploadedDataCollection/UploadedDataScreen';
+import VialPictureUplaoded from '../Screens/UploadedDataCollection/VialPictureUplaoded';
+import HabitatPictureUploaded from '../Screens/UploadedDataCollection/HabitatPictureUploaded';
+import VialPicture from '../Screens/VialPhoto/VialPicture';
+import HabitatPicture from '../Screens/HabitatPhoto/HabitatPicture';
+import MapScreen from '../Screens/Map/MapsScreen';
+import HomeScreen from '../Screens/Home/HomeScreen';
+import LoginScreen from '../Screens/User/LoginScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -107,11 +107,11 @@ export default function NavigationScreen() {
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="CollectDataScreen" component={ProjectDetails} options={{ headerShown: false }} />
-        <Stack.Screen name="CollectScreen" component={CollectData} options={{ headerShown: false }} />
+        <Stack.Screen name="CollectScreen" component={CollectDataScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ProjectDetails" component={ProjectDetails} options={{ headerShown: false }} />
         <Stack.Screen name="Project" component={CollectScreen} options={{ headerShown: false }} />
         <Stack.Screen name="VialPicture" component={VialPicture} options={{ headerShown: false }}/>
-        <Stack.Screen name="HabitatPicture" component={HabitatPicturesScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="HabitatPicture" component={HabitatPicture} options={{ headerShown: false }}/>
         <Stack.Screen name="SetupDetail" component={SetupDetail} options={{ headerShown: false }}/>
         <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="Home2" component={HomeScreen} options={{ headerShown: false }}/>

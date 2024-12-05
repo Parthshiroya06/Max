@@ -15,7 +15,7 @@ import {
 } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useUploadStatus} from './UploadStatusProvider';
+import {useUploadStatus} from '../../ContextAPI/UploadStatusProvider';
 
 const {width, height} = Dimensions.get('window');
 
@@ -23,7 +23,7 @@ const SetupScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [projects, setProjects] = useState([]);
-  const {getProjectStatus} = useUploadStatus(); // Use the project status function from UploadStatusProvider
+  const {getProjectStatus} = useUploadStatus(); // project status function from UploadStatusProvider
   const [uploadedNotes, setUploadedNotes] = useState([]);
 
   // Load projects from AsyncStorage and update the projects array
@@ -71,7 +71,7 @@ const SetupScreen = () => {
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
-          {item.waterTypes.join(', ') || 'No water types'},{' '}
+          {item.cityName|| 'No city'},{' '}
           {item.country || 'No country'}
         </Text>
         <Text style={styles.Date}>

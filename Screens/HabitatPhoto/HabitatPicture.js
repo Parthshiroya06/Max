@@ -19,24 +19,39 @@ import Dialog from 'react-native-dialog';
 
 const { width, height } = Dimensions.get('window');
 
+const scale = (size) => (width / 375) * size;
+
+
+// Define the HabitatPicture component
 const HabitatPicture = ({ route }) => {
-  const { projectId, serial } = route.params;
+  const { projectId, serial ,  note: initialNote } = route.params;
   const [imagess, setImagess] = useState([]);
   const [showImage, setShowImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [dialogVisibles, setDialogVisibles] = useState(false);
   const [customImageNames, setCustomImageNames] = useState('');
   const navigation = useNavigation();
+  const [note, setNote] = useState(initialNote || null); // State to store the note if not passed initially
 
+
+  // Fetch image data on component mount or when dependencies change
   useEffect(() => {
     const fetchImageData = async () => {
       try {
-        const projectData = await AsyncStorage.getItem(projectId);
+        const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
         if (projectData) {
-          const parsedData = JSON.parse(projectData);
-          const note = parsedData.find((n) => n.Serial === serial);
-          if (note && note.imagess) {
-            setImagess(note.imagess);
+          const parsedData = JSON.parse(projectData); // Parse the project data
+
+
+          const fetchedNote = parsedData.find(n => n.Serial === serial); // Find the specific note by serial
+          if (fetchedNote) {
+            setNote(fetchedNote); // Set note if not already available
+            setImagess(fetchedNote.imagess); // Set all images from the note
+
+            
+            
+          } else {
+            console.error('Note not found for serial:', serial);
           }
         }
       } catch (error) {
@@ -44,18 +59,24 @@ const HabitatPicture = ({ route }) => {
       }
     };
 
-    fetchImageData();
-  }, [projectId, serial]);
+    if (!initialNote) {
+      fetchImageData(); // Fetch image data if initialNote is not provided
+    }
+  }, [projectId, serial, initialNote]);
 
+  // Save updated images to storage
   const saveImagesToStorage = async (updatedImagess) => {
     try {
       const projectData = await AsyncStorage.getItem(projectId);
       if (projectData) {
         const parsedData = JSON.parse(projectData);
         const noteIndex = parsedData.findIndex((n) => n.Serial === serial);
+
+        
         if (noteIndex !== -1) {
           parsedData[noteIndex].imagess = updatedImagess;
           await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
+
         }
       }
     } catch (error) {
@@ -63,31 +84,34 @@ const HabitatPicture = ({ route }) => {
     }
   };
   
-
+  // Handle image press to show image preview
   const handleImagePress = (image) => {
     setSelectedImage(image);
     setShowImage(true);
   };
 
+  // Handle back press to close image preview
   const handleBackPress = () => {
     setShowImage(false);
     setSelectedImage(null);
   };
 
+  // Open camera to capture a habitat picture
   const openCameraHabitat = async () => {
     const options = { mediaType: 'photo', quality: 1 };
     try {
       const result = await launchCamera(options);
       if (result.assets && result.assets.length > 0) {
-        const newImage = { uri: result.assets[0].uri };
-        setImagess([...imagess, newImage]);
-        setDialogVisibles(true);
+        const newImage = { uri: result.assets[0].uri }; // Create a new image object
+        setImagess([...imagess, newImage]);  // Add the new image to the images state
+        setDialogVisibles(true);  // Show the dialog to save the image name
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to open camera.');
     }
   };
 
+  // Handle saving the custom image name
   const handleHabitatSaveImage = async () => {
     if (!customImageNames.trim()) {
       Alert.alert('Error', 'Please enter a valid name for the image.');
@@ -96,14 +120,25 @@ const HabitatPicture = ({ route }) => {
   
     try {
       // Update the last image in the list with the custom name
-      const lastImage = imagess[imagess.length - 1];
-      const updatedImage = { ...lastImage, name: customImageNames };
-      const updatedImagess = [...imagess];
-      updatedImagess[imagess.length - 1] = updatedImage;
+      const lastImage = imagess[imagess.length - 1]; // Get the last image in the list
+      const updatedImage = { ...lastImage, name: customImageNames }; // Update the last image with the custom name
+      const updatedImagess = [...imagess]; // Update the images state
+      updatedImagess[imagess.length - 1] = updatedImage; // Update the images state
   
       // Save updated image list to AsyncStorage
       setImagess(updatedImagess);
       await saveImagesToStorage(updatedImagess);
+  
+      // Log the saved image and updated images list
+      console.log('Custom image saved:', updatedImage); // Set the updated images state
+      console.log('Updated images list:', updatedImagess);  // Save updated images to storage
+
+      if (note) {
+        setNote(prevNote => ({
+          ...prevNote,
+          imagess: updatedImagess,  // Update the images in the note
+        }));
+      }
   
       // Clear dialog inputs and close dialog
       setCustomImageNames('');
@@ -113,12 +148,53 @@ const HabitatPicture = ({ route }) => {
     }
   };
   
-
-  const handleDeleteImage = (uri) => {
-    const updatedImages = imagess.filter((img) => img.uri !== uri);
-    setImagess(updatedImages);
-    saveImagesToStorage();
+  // Handle deleting an image
+  const handleDeleteImage = async (imageUri) => {
+    try {
+      console.log('Deleting image with URI:', imageUri);
+  
+      // Remove selected image from the 'images' array
+      const updatedImagess = imagess.filter(image => image.uri !== imageUri);
+      console.log('Updated images array after deletion:', updatedImagess);
+  
+      // Update the images state
+      setImagess(updatedImagess);
+  
+      // If note is already set, update the note object as well
+      if (note) {
+        setNote(prevNote => ({
+          ...prevNote,
+          imagess: updatedImagess,  // Update the images in the note
+        }));
+      }
+  
+      // Fetch the project data from AsyncStorage
+      const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
+      if (projectData) {
+        const parsedData = JSON.parse(projectData); // Parse the project data
+  
+        // Find the note in the project data
+        const noteIndex = parsedData.findIndex(n => n.Serial === serial);
+  
+        if (noteIndex > -1) {
+          // Update the images in the note
+          parsedData[noteIndex].imagess = updatedImagess;
+         
+          // Save the updated project data to AsyncStorage
+          await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));  
+          console.log('Successfully saved updated project data to AsyncStorage.');
+    
+        } else {
+          console.error('Note not found in project data.');
+        }
+      } else {
+        console.error('Project data not found in AsyncStorage.');
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+    }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,7 +208,14 @@ const HabitatPicture = ({ route }) => {
       ) : (
         <>
           <View style={styles.headerContainer}>
-            <TouchableOpacity onPress={() => navigation.navigate('CollectScreen')}>
+            <TouchableOpacity 
+             onPress={() => {
+              navigation.navigate('CollectScreen' , {
+                 note,  // Pass the updated note
+                projectId,
+            });
+            }}
+            >
               <Text style={styles.backText2}>{'\u2039'}</Text>
             </TouchableOpacity>
             <Text style={styles.header}>Habitat Picture</Text>
@@ -180,21 +263,22 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   header: {
-    fontSize: 22,
+    fontSize: width * 0.052,
     fontWeight: 'bold',
     textAlign: 'center',
     color: 'black',
   },
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginBottom: 30,
-    marginLeft: 25,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: width * 0.03,
+    marginBottom: height * 0.03,
+    marginLeft: width * 0.05,
   },
   backText2: {
-    fontSize: 37,
-    marginRight: 95,
+    fontSize: width * 0.09,
+    marginRight: width * 0.25,
+    marginBottom: height * 0.001,
     color: 'black',
     fontWeight: 'bold',
   },
@@ -202,34 +286,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#B9D1D0',
-    padding: 16,
+    padding: width * 0.04,
     borderRadius: 8,
-    marginVertical: 10,
+    marginVertical: height * 0.01,
     width: width * 0.85,
     alignSelf: 'center',
   },
   iconContainer: {
-    marginRight: 16,
+    marginRight: width * 0.03,
   },
   iconContainer2: {
     marginLeft: 'auto',
   },
   noteInfo: {
     justifyContent: 'center',
-    flex: 1,
+    flex: 1, 
   },
   imageName: {
-    fontSize: 16,
+    fontSize: width * 0.04,
     color: '#333',
   },
   imageSize: {
-    fontSize: 14,
+    fontSize: width * 0.035,
     color: '#777',
     marginTop: 4,
   },
   imagePreview: {
-    width: width * 0.99,
-    height: height * 0.65,
+    width: width * 0.99, 
+    height: height * 0.65, 
     borderWidth: 3,
     borderColor: 'black',
     marginTop: height * 0.15,
@@ -239,31 +323,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backText: {
-    fontSize: 24,
+    fontSize: width * 0.05,
     color: 'black',
+    fontWeight:"bold",
     marginTop: height * 0.05,
   },
   listContent: {
-    paddingBottom: 20,
-  },
-  captureButton: {
-    position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4B9E9E',
-    paddingVertical: 13,
-    paddingHorizontal: 90,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'black',
-  },
-  captureButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'black',
+   paddingBottom: height * 0.02,
   },
 });
 

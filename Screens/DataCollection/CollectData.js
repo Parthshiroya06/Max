@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import Dialog from 'react-native-dialog'; 
 import {useRoute , useFocusEffect} from '@react-navigation/native';
 
-const CollectScreen = () => {
+const CollectDataScreen = () => {
   const [selectedHabitats, setSelectedHabitats] = useState([]);
   const [selectedSubstrates, setSelectedSubstrates] = useState([]); 
   const [selectedWaterTypes, setSelectedWaterTypes] = useState([]);
@@ -43,6 +43,7 @@ const CollectScreen = () => {
 
   useEffect(() => {
     if (route.params?.note) {
+      console.log("Updated note received:", route.params.note);
       loadNoteData(route.params.note);
     }
   }, [route.params?.note]);
@@ -69,35 +70,39 @@ const CollectScreen = () => {
   };
 
   useFocusEffect(
-  React.useCallback(() => {
-    const loadExistingNote = async () => {
-      try {
-        const existingNotes = await AsyncStorage.getItem('notes');
-        let notes = existingNotes ? JSON.parse(existingNotes) : [];
-        //console.log("Loading specific : ", existingNotes);
-        // console.log("Loading : ", notes);
-        // If route.params?.note exists, load that specific note
-        if (route.params?.note) {
-          console.log("Loading specific note: ", route.params.note);
-          loadNoteData(route.params.note);
-        } 
-        // Otherwise, load the last note from AsyncStorage if available
-        else if (notes.length > 0) {
-          console.log("Loading last note from existing notes: ", notes[notes.length - 1]);
-          loadNoteData(notes[notes.length - 1]);
-        } else {
-          console.log("No notes available");
+    React.useCallback(() => {
+      const loadExistingNote = async () => {
+        try {
+          const existingNotes = await AsyncStorage.getItem('notes');
+          let notes = existingNotes ? JSON.parse(existingNotes) : [];
+          console.log("Route params note: ", route.params?.note);
+  
+          // If route.params?.note exists, load that specific note
+          if (route.params?.note) {
+            console.log("Loading specific note: ", route.params.note);
+            loadNoteData(route.params.note);
+          } 
+          else {
+            console.log("No notes available");
+          }
+        } catch (error) {
+          console.error("Error loading notes from AsyncStorage: ", error);
         }
-      } catch (error) {
-        console.error("Error loading notes from AsyncStorage: ", error);
-      }
-    };
-
-    // Run the loadExistingNote function whenever the screen gains focus
-    loadExistingNote();
-
-  }, []) // Empty dependency array means it will run every time the screen is focused
-);
+      };
+  
+      // Run the loadExistingNote function whenever the screen gains focus
+      loadExistingNote();
+  
+      // UseEffect inside for updates to route.params.note
+      return () => {
+        if (route.params?.note) {
+          console.log("Updated note received:", route.params.note);
+          loadNoteData(route.params.note);
+        }
+      };
+    }, [route.params?.note]) // Adding dependency on route.params?.note
+  );
+  
   
   const toggleHabitat = (habitat) => {
     if (selectedHabitats.includes(habitat)) {
@@ -546,7 +551,7 @@ const CollectScreen = () => {
     // });
     const projectId = route.params?.projectId;
     
-    console.log('projectIdcgh:', projectId);
+    console.log('projectI:', projectId);
     const noteNumber = route.params?.note
         ? route.params.note.Serial // If editing, keep the same Serial
         : `Note 0${notes.length + 1}`; // New note gets the next number
@@ -782,76 +787,57 @@ const styles = StyleSheet.create({
     backgroundColor: '#ACCAC8',
   },
   scrollViewContent: {
-    //padding: 20,
     padding: scaleSize(20),
     flexGrow: 1,
-    //paddingBottom: 100,
     paddingBottom: scaleSize(50),
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    //marginBottom: 6,
     marginBottom: scaleSize(6)
   },
   backIconContainer: {
     position: 'absolute',
     left: 0,
-    //marginLeft: 9,
     marginLeft: scaleSize(9),
   },
   header: {
-    //fontSize: 22,
     fontSize: scaleSize(22),
     fontWeight: 'bold',
     color: 'black',
     fontFamily: 'Playfair Display',
   },
   backIcon: {
-   // fontSize: 45,
    fontSize: scaleSize(45),
     fontWeight: 'bold',
     color: 'black',
   },
   sectionHeader: {
-    //fontSize: 18,
     fontSize: scaleSize(18),
     fontWeight: 'bold',
-    //marginTop: 28,
     marginTop: scaleSize(28),
     color: '#000000',
-   // marginLeft: 5,
    marginLeft: scaleSize(5),
     fontFamily: 'Playfair Display',
   },
   separator: {
-    //height: 2,
     height: scaleSize(2),
     backgroundColor: '#000000',
-   // marginVertical: 10,
    marginVertical: scaleSize(10),
   },
   label: {
-    //fontSize: 18,
     fontSize: scaleSize(18),
     color: '#000000',
-    //marginBottom: 15,
     marginBottom: scaleSize(15),
     fontWeight: 'bold',
-    // marginLeft: 5,
-    // marginTop: 15,
     marginLeft: scaleSize(5),
     marginTop: scaleSize(15),
   },
   input: {
-    //height: 67,
     height: scaleSize(67),
     borderColor: 'black',
     borderWidth: 1,
-    // borderRadius: 10,
-    // padding: 17,
-    // marginTop: 15,
     borderRadius: scaleSize(10),
     padding: scaleSize(17),
     marginTop: scaleSize(15),
@@ -861,21 +847,17 @@ const styles = StyleSheet.create({
   coordinatesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // marginTop: 28, // adjust if needed to fit nicely above the button
-    // marginBottom:-6
     marginTop: scaleSize(28),
     marginBottom: scaleSize(-6),
   },
   coordinatesText: {
-    //fontSize: 16,
     fontSize: scaleSize(16),
     fontWeight: 'bold',
     color: 'black',
-   // marginHorizontal: 6, // reduce space between Latitude and Longitude
    marginHorizontal: scaleSize(6),
   },
   coordinatesValue: {
-    color: 'black', // color for the actual coordinates
+    color: 'black', 
   },
   
   observationsInput: {
@@ -884,20 +866,19 @@ const styles = StyleSheet.create({
     marginTop:2
   },
   button: {
-    width: width * 0.9, // 90% of screen width
-    height: height * 0.07, // 7% of screen height
+    width: width * 0.9, 
+    height: height * 0.07, 
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: height * 0.03, // 3% of screen height
+    marginVertical: height * 0.03, 
     backgroundColor: 'black',
-    marginRight: width * 0.04, // 4% of screen width
+    marginRight: width * 0.04, 
   },
   buttonText: {
     color: '#FFF',
-    //fontSize: 16,
     fontSize: scaleSize(16),
     fontWeight: 'bold',
   },
@@ -966,7 +947,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    maxWidth: '80%', // Ensure it doesn't overflow
+    maxWidth: '80%', 
   },
   habitatTag: {
     backgroundColor: 'black',
@@ -1056,4 +1037,4 @@ imageIcon: {
   
 });
 
-export default CollectScreen; 
+export default CollectDataScreen; 

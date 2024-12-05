@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect , useCallback} from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  RefreshControl,
   ScrollView,
   Dimensions,
   PixelRatio,
@@ -91,10 +92,10 @@ const DonutChart = () => {
 const HomeScreen = ({navigation}) => {
   const [liveProjects, setLiveProjects] = useState([]); // State for live projects
   const [upcomingProjects, setUpcomingProjects] = useState([]); // State for upcoming projects
-  
-  // useEffect fetches project data and filters it into live and upcoming projects
-  useEffect(() => {
-    const fetchProjects = async () => {
+  const [refreshing, setRefreshing] = useState(false); // State for refresh control
+
+
+      const fetchProjects = useCallback(async () => {
       try {
         const data = await AsyncStorage.getItem('projects'); // Replace 'projects' with your AsyncStorage key
         const projects = data ? JSON.parse(data) : [];
@@ -116,10 +117,19 @@ const HomeScreen = ({navigation}) => {
       } catch (error) {
         console.error('Error fetching projects:', error);
       }
-    };
-
-    fetchProjects();
+    
   }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+   // Refresh function for pull-to-refresh
+   const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchProjects().finally(() => setRefreshing(false));
+  }, [fetchProjects]);
+
  
   // Renders individual project items
   const renderProject = ({item}) => (
@@ -133,7 +143,7 @@ const HomeScreen = ({navigation}) => {
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
-          {item.waterTypes.join(', ') || 'No water types'} ,{' '}
+          {item.cityName|| 'No city'} ,{' '}
           {item.country || 'No country'}
         </Text>
         <Text style={styles.Date}>
@@ -157,7 +167,11 @@ const HomeScreen = ({navigation}) => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }
+    >
 
       {/* Header Section */}
       <View style={styles.header}>

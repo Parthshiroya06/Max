@@ -16,20 +16,22 @@ import {useNavigation} from '@react-navigation/native';
 
 const {width, height} = Dimensions.get('window');
 
+// Define the VialPicture component
 const VialPicture = ({route}) => {
-  const {projectId, serial, note: initialNote} = route.params; // Receive projectId, serial, and note
+  const {projectId, serial, note: initialNote} = route.params; // Extract route parameters
   const [note, setNote] = useState(initialNote || null); // State to store the note if not passed initially
   const [images, setImages] = useState([]); // To store all images
   const [showImage, setShowImage] = useState(false); // State to toggle visibility
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image for full view
   const navigation = useNavigation();
 
+  // Fetch image data on component mount or when dependencies change
   useEffect(() => {
     const fetchImageData = async () => {
       try {
-        const projectData = await AsyncStorage.getItem(projectId);
+        const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
         if (projectData) {
-          const parsedData = JSON.parse(projectData);
+          const parsedData = JSON.parse(projectData);  // Parse the project data
           const fetchedNote = parsedData.find(n => n.Serial === serial); // Find the specific note by serial
           if (fetchedNote) {
             setNote(fetchedNote); // Set note if not already available
@@ -44,26 +46,29 @@ const VialPicture = ({route}) => {
     };
 
     if (!initialNote) {
-      fetchImageData();
+      fetchImageData(); // Fetch image data if initialNote is not provided
     }
   }, [projectId, serial, initialNote]);
 
+  // Handle image press to show image preview
   const handleImagePress = image => {
     setSelectedImage(image);
     setShowImage(true);
   };
 
+  // Handle back press to close image preview
   const handleBackPress = () => {
     setShowImage(false);
     setSelectedImage(null);
   };
 
+  // Handle deleting an image
   const handleDeleteImage = async (imageUri) => {
   try {
-    console.log('Deleting image with URI:', imageUri);
+    console.log('Deleting image with URI:', imageUri);  
 
     // Remove selected image from the 'images' array
-    const updatedImages = images.filter(image => image.uri !== imageUri);
+    const updatedImages = images.filter(image => image.uri !== imageUri); // Remove the image from the list
     console.log('Updated images array after deletion:', updatedImages);
 
     // Update the images state
@@ -88,8 +93,7 @@ const VialPicture = ({route}) => {
       if (noteIndex > -1) {
         // Update the images in the note
         parsedData[noteIndex].images = updatedImages;
-        console.log('Updated project data after image deletion:', parsedData);
-
+       
         // Save the updated project data to AsyncStorage
         await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
         console.log('Successfully saved updated project data to AsyncStorage.');
@@ -123,20 +127,11 @@ const VialPicture = ({route}) => {
         <>
           <View style={styles.headerContainer}>
             <TouchableOpacity
-            // onPress={() => {
-            //   navigation.navigate('CollectScreen');
-            // }}
             onPress={() => {
-              // Assuming `note` is available and you want to pass it to the next screen
-              if (note) {
-                navigation.navigate('CollectScreen', {
-                  note,  // Passing the note
-                  noteSerial: note.Serial,  // Passing the note serial (if needed)
-                  projectId,  // Passing the project ID
-                });
-              } else {
-                console.error('Note is undefined');
-              }
+              navigation.navigate('CollectScreen' , {
+                 note,  // Pass the updated note
+                projectId,
+            });
             }}
             >
               <Text style={styles.backText2}>{'\u2039'}</Text>
@@ -184,21 +179,22 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   header: {
-    fontSize: 22,
+    fontSize: width * 0.052,
     fontWeight: 'bold',
     textAlign: 'center',
     color: 'black',
   },
   headerContainer: {
-    flexDirection: 'row', // Display items in a row
-    alignItems: 'center', // Align items vertically in the center
-    padding: 10, // Optional: Add padding for better spacing
-    marginBottom: 30,
-    marginLeft: 25,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: width * 0.03,
+    marginBottom: height * 0.03,
+    marginLeft: width * 0.05,
   },
   backText2: {
-    fontSize: 37, // Adjust size of the back icon
-    marginRight: 95, // Add some space between the back icon and the text
+    fontSize: width * 0.09,
+    marginRight: width * 0.26,
+    marginBottom: height * 0.001,
     color: 'black',
     fontWeight: 'bold',
   },
@@ -206,34 +202,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#B9D1D0',
-    padding: 16,
+    padding: width * 0.04,
     borderRadius: 8,
-    marginVertical: 10,
-    width: width * 0.85, // 90% of the screen width
+    marginVertical: height * 0.01,
+    width: width * 0.85,
     alignSelf: 'center',
   },
   iconContainer: {
-    marginRight: 16,
+    marginRight: width * 0.03,
   },
   iconContainer2: {
     marginLeft: 'auto',
   },
   noteInfo: {
     justifyContent: 'center',
-    flex: 1, // Allow text to take up remaining space
+    flex: 1, 
   },
   imageName: {
-    fontSize: 16,
+    fontSize: width * 0.04,
     color: '#333',
   },
   imageSize: {
-    fontSize: 14,
+    fontSize: width * 0.035,
     color: '#777',
     marginTop: 4,
   },
   imagePreview: {
-    width: width * 0.99, // 90% of the screen width
-    height: height * 0.65, // 60% of the screen height
+    width: width * 0.99, 
+    height: height * 0.65, 
     borderWidth: 3,
     borderColor: 'black',
     marginTop: height * 0.15,
@@ -243,12 +239,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backText: {
-    fontSize: 24,
+    fontSize: width * 0.05,
     color: 'black',
+    fontWeight:"bold",
     marginTop: height * 0.05,
   },
   listContent: {
-    paddingBottom: 20,
+   paddingBottom: height * 0.02,
   },
 });
 

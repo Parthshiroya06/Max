@@ -15,7 +15,7 @@ import {
 } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useUploadStatus} from './UploadStatusProvider';
+import {useUploadStatus} from '../../ContextAPI/UploadStatusProvider';
 
 const {width, height} = Dimensions.get('window');
 
@@ -69,7 +69,7 @@ const CollectScreen = () => {
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
-          {item.waterTypes.join(', ') || 'No water types'} ,{' '}
+          {item.cityName|| 'No city'} ,{' '}
           {item.country || 'No country'}
         </Text>
         <Text style={styles.Date}>

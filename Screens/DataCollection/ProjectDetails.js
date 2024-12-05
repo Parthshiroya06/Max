@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useUploadStatus} from './UploadStatusProvider';
+import {useUploadStatus} from '../../ContextAPI/UploadStatusProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useFocusEffect} from '@react-navigation/native';
 
@@ -182,7 +182,7 @@ const ProjectDetails = () => {
 
       <View style={styles.locationSection}>
         <Text style={styles.location}>
-          {project.waterTypes} , {project.country}
+          {project.cityName} , {project.country}
         </Text>
         <Text style={styles.dateRange}>
           {formatDate(project.fromDate)} - {formatDate(project.toDate)}
@@ -266,8 +266,10 @@ const ProjectDetails = () => {
                 <Text style={styles.addButtonText2}>Add Notes</Text>
               </TouchableOpacity>
             )}
+            
           </>
         )}
+       
       </View>
     </ScrollView>
   );
@@ -278,6 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#B6D4D2',
     padding: screenWidth * 0.05,
+    
   },
   projectId: {
     fontSize: screenWidth * 0.06,
@@ -361,6 +364,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     marginLeft: screenWidth * 0.013,
     borderColor: 'black',
+    marginBottom: screenHeight * 0.05
   },
   addButtonText: {
     fontSize: screenWidth * 0.058,

@@ -16,16 +16,16 @@ import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Dimensions} from 'react-native';
 import Icons from 'react-native-vector-icons/MaterialIcons'; // or another icon set
-import {useUploadStatus} from './UploadStatusProvider';
+import {useUploadStatus} from '../../ContextAPI/UploadStatusProvider';
 
 const {width, height} = Dimensions.get('window');
 const SetupDetail = () => {
-  
+
   // State variables to manage project details and UI states
   const [selectedHabitats, setSelectedHabitats] = useState([]); // Tracks selected Team Members
-  const [selectedWaterTypes, setSelectedWaterTypes] = useState([]); // Tracks selected City Names
   const [projectId, setProjectId] = useState(''); // Stores generated project ID
   const [projectName, setProjectName] = useState(''); // Stores project name
+  const [cityName, setCityName] = useState(''); // Stores city name
   const [expandedBox, setExpandedBox] = useState(null); // Tracks which box is expanded
   const [fromDate, setFromDate] = useState(null); // Tracks start date
   const [toDate, setToDate] = useState(null); // Tracks end date
@@ -37,15 +37,6 @@ const SetupDetail = () => {
   const [isFocused, setIsFocused] = useState(false);
   const navigation = useNavigation();
   const habitats = ['Ankit', 'Raj', 'Ayush', 'Anuj'];
-  const waterTypes = [
-    'Patna',
-    'Indore',
-    'Delhi',
-    'Pune',
-    'Bhopal',
-    'Mumbai',
-    'Nagpur',
-  ];
 
   // Hardcoded list of 200 country names
   const countries = [
@@ -267,15 +258,6 @@ const SetupDetail = () => {
     }
   };
 
-  // Allows selecting only one City
-  const toggleWater = waterType => {
-    if (selectedWaterTypes.includes(waterType)) {
-      setSelectedWaterTypes([]); // Deselect if already selected
-    } else {
-      setSelectedWaterTypes([waterType]); // Allow only one selection
-    }
-  };
-
   // Focus handlers for description input
   const handleFocus = () => {
     setIsFocused(true);
@@ -347,7 +329,7 @@ const SetupDetail = () => {
       projectName,
       habitats: selectedHabitats,
       country: selectedCountry,
-      waterTypes: selectedWaterTypes,
+      cityName,
       fromDate: fromDate ? fromDate.toISOString() : null,
       toDate: toDate ? toDate.toISOString() : null,
       description,
@@ -380,7 +362,7 @@ const SetupDetail = () => {
     return (
       projectName &&
       selectedHabitats.length > 0 &&
-      selectedWaterTypes.length > 0 &&
+      cityName &&
       fromDate &&
       toDate &&
       description &&
@@ -481,54 +463,14 @@ const SetupDetail = () => {
             style={styles.countryList}
           />
         )}
-        <View style={styles.habitatContainer}>
-          <View style={styles.habitatDescriptionBox}>
-            <View style={styles.selectedHabitatsContainer}>
-              <View style={styles.selectedHabitatsWrapper}>
-                {selectedWaterTypes.length === 0 ? (
-                  <Text style={styles.placeholderText}>City</Text>
-                ) : (
-                  selectedWaterTypes.map((waterType, index) => (
-                    <Text key={index} style={styles.habitatTag}>
-                      {waterType}
-                    </Text>
-                  ))
-                )}
-                {selectedWaterTypes.length > 4 && !isWaterExpanded && (
-                  <Text style={styles.additionalText}>
-                    +{selectedWaterTypes.length - 4}
-                  </Text>
-                )}
-              </View>
-              <TouchableOpacity onPress={() => toggleExpand('waterTypes')}>
-                <Icon
-                  name={
-                    expandedBox === 'WaterTypes' ? 'expand-less' : 'expand-more'
-                  }
-                  size={29}
-                  color="black"
-                />
-              </TouchableOpacity>
-            </View>
 
-            {expandedBox === 'waterTypes' && (
-              <View style={styles.habitatList}>
-                {waterTypes.map((waterTypes, index) => (
-                  <View key={index} style={styles.habitatCheckboxContainer}>
-                    <CheckBox
-                      value={selectedWaterTypes.includes(waterTypes)}
-                      onValueChange={() => toggleWater(waterTypes)}
-                      tintColors={{true: '#48938F', false: '#000000'}}
-                      v
-                      style={styles.checkbox}
-                    />
-                    <Text style={styles.habitatText}>{waterTypes}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="City"
+          placeholderTextColor="gray"
+          value={cityName}
+          onChangeText={text => setCityName(text)}
+        />
 
         {/* Select Start Date */}
         <Text style={styles.label}>Dates</Text>
@@ -724,8 +666,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: '#000000',
     paddingHorizontal: 40,
-    backgroundColor: '#fff', // Ensures contrast with placeholder text
-    color: '#000', // Ensures date text is visible
+    backgroundColor: '#fff', 
+    color: '#000', 
   },
   placeholderText: {
     fontSize: 16,
@@ -733,8 +675,8 @@ const styles = StyleSheet.create({
     margin: 2,
   },
   button: {
-    width: width * 0.9, // 90% of the screen width
-    height: 60, // Fixed height
+    width: width * 0.9, 
+    height: 60, 
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#000',
@@ -743,7 +685,7 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     marginTop: 35,
     backgroundColor: '#48938F',
-    marginLeft: 'auto', // Centers the button horizontally
+    marginLeft: 'auto', 
     marginRight: 'auto',
   },
   buttonText: {
@@ -782,7 +724,7 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   countryList: {
-    maxHeight: 150, // Restrict the height
+    maxHeight: 150,
     borderWidth: 1,
     borderColor: 'black',
     marginTop: 0,

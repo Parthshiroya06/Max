@@ -1,9 +1,8 @@
 import React from 'react';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import NavigationScreen from './NavigationScrren';
-import { UploadStatusProvider } from './UploadStatusProvider';
-//import { UploadStatusProvider } from './path-to-context/UploadStatusContext';
+import NavigationScreen from './NavigationScreen/NavigationScrren';
+import { UploadStatusProvider } from './ContextAPI/UploadStatusProvider';
 
 Icon.loadFont();  // Load fonts when app starts
 
