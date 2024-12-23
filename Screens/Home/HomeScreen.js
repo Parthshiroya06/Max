@@ -1,4 +1,4 @@
-import React, {useState, useEffect , useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -17,20 +17,17 @@ import {Svg, Circle} from 'react-native-svg';
 
 // DonutChart component renders a circular chart showing progress of different statuses
 const DonutChart = () => {
-  const size = 115; 
+  const size = 115;
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const uploadedProgress = 0.74; 
-  const pendingProgress = 0.14; 
-  const notStartedProgress = 0.12; 
-
+  const uploadedProgress = 0.74;
+  const pendingProgress = 0.14;
+  const notStartedProgress = 0.12;
 
   return (
     <Svg width={size} height={size}>
-      
-      {/* Background Circle - for the base layer */}
       <Circle
         cx={size / 2}
         cy={size / 2}
@@ -39,8 +36,6 @@ const DonutChart = () => {
         strokeWidth={strokeWidth}
         fill="none"
       />
-      
-      {/* Uploaded Segment - colored to represent uploaded progress */}
       <Circle
         cx={size / 2}
         cy={size / 2}
@@ -48,15 +43,11 @@ const DonutChart = () => {
         stroke="#48938F"
         strokeWidth={strokeWidth}
         fill="none"
-        strokeDasharray={`${
-          uploadedProgress * circumference
-        }, ${circumference}`}
+        strokeDasharray={`${uploadedProgress * circumference}, ${circumference}`}
         strokeDashoffset={0}
         rotation={-90}
         origin={`${size / 2}, ${size / 2}`}
       />
-      
-      {/* Pending Segment - colored to represent pending progress */}
       <Circle
         cx={size / 2}
         cy={size / 2}
@@ -69,8 +60,6 @@ const DonutChart = () => {
         rotation={-90}
         origin={`${size / 2}, ${size / 2}`}
       />
-      
-      {/* Not Started Segment - colored to represent not started progress */}
       <Circle
         cx={size / 2}
         cy={size / 2}
@@ -78,9 +67,7 @@ const DonutChart = () => {
         stroke="#EEEEEE"
         strokeWidth={strokeWidth}
         fill="none"
-        strokeDasharray={`${
-          notStartedProgress * circumference
-        }, ${circumference}`}
+        strokeDasharray={`${notStartedProgress * circumference}, ${circumference}`}
         strokeDashoffset={-(uploadedProgress + pendingProgress) * circumference}
         rotation={-90}
         origin={`${size / 2}, ${size / 2}`}
@@ -91,46 +78,35 @@ const DonutChart = () => {
 
 const HomeScreen = ({navigation}) => {
   const [liveProjects, setLiveProjects] = useState([]); // State for live projects
-  const [upcomingProjects, setUpcomingProjects] = useState([]); // State for upcoming projects
   const [refreshing, setRefreshing] = useState(false); // State for refresh control
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const data = await AsyncStorage.getItem('projects'); // Replace 'projects' with your AsyncStorage key
+      const projects = data ? JSON.parse(data) : [];
+      const currentDate = new Date();
 
-      const fetchProjects = useCallback(async () => {
-      try {
-        const data = await AsyncStorage.getItem('projects'); // Replace 'projects' with your AsyncStorage key
-        const projects = data ? JSON.parse(data) : [];
+      // Filter projects that are currently live
+      const live = projects.filter(
+        project => new Date(project.fromDate) <= currentDate,
+      );
 
-        const currentDate = new Date();
-
-        // Filter projects that are currently live
-        const live = projects.filter(
-          project => new Date(project.fromDate) <= currentDate,
-        );
-
-         // Filter projects that are yet to start
-        const upcoming = projects.filter(
-          project => new Date(project.fromDate) > currentDate,
-        );
-
-        setLiveProjects(live);  // Update live projects state
-        setUpcomingProjects(upcoming);  // Update upcoming projects state
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-      }
-    
+      setLiveProjects(live); // Update live projects state
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
   }, []);
 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-   // Refresh function for pull-to-refresh
-   const onRefresh = useCallback(() => {
+  // Refresh function for pull-to-refresh
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchProjects().finally(() => setRefreshing(false));
   }, [fetchProjects]);
 
- 
   // Renders individual project items
   const renderProject = ({item}) => (
     <TouchableOpacity
@@ -138,13 +114,10 @@ const HomeScreen = ({navigation}) => {
       onPress={() =>
         navigation.navigate('ProjectDetails', {projectId: item.id})
       }>
-
-        {/* Displays project details */}
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
-          {item.cityName|| 'No city'} ,{' '}
-          {item.country || 'No country'}
+          {item.cityName || 'No city'}, {item.country || 'No country'}
         </Text>
         <Text style={styles.Date}>
           {item.fromDate && item.toDate
@@ -154,8 +127,6 @@ const HomeScreen = ({navigation}) => {
             : 'No date range'}
         </Text>
       </View>
-
-      {/* Displays project status icon */}
       <View style={styles.statusIcon}>
         {item.isUploaded ? (
           <Icon name="cloud-done" size={28} color="black" />
@@ -167,12 +138,11 @@ const HomeScreen = ({navigation}) => {
   );
 
   return (
-    <ScrollView style={styles.container}
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }
-    >
-
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       {/* Header Section */}
       <View style={styles.header}>
         <Image source={{uri: 'logo5'}} style={styles.logo} />
@@ -192,8 +162,6 @@ const HomeScreen = ({navigation}) => {
             <DonutChart />
             <Text style={styles.totalCount}>43</Text>
           </View>
-
-           {/* Status Legends */}
           <View style={styles.statusLegend}>
             <View style={styles.statusRow}>
               <View
@@ -204,7 +172,6 @@ const HomeScreen = ({navigation}) => {
                 Uploaded
               </Text>
             </View>
-
             <View style={styles.statusRow}>
               <View
                 style={[styles.statusColorBox, {backgroundColor: '#ACCAC8'}]}
@@ -214,7 +181,6 @@ const HomeScreen = ({navigation}) => {
                 Pending
               </Text>
             </View>
-
             <View style={styles.statusRow}>
               <View
                 style={[styles.statusColorBox, {backgroundColor: '#EEEEEE'}]}
@@ -236,15 +202,6 @@ const HomeScreen = ({navigation}) => {
         keyExtractor={item => item.id}
         style={styles.projectList}
       />
-
-      {/* Upcoming Projects Section */}
-      <Text style={styles.sectionTitle}>Upcoming Projects</Text>
-      <FlatList
-        data={upcomingProjects}
-        renderItem={renderProject}
-        keyExtractor={item => item.id}
-        style={styles.projectList}
-      />
     </ScrollView>
   );
 };
@@ -258,17 +215,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    padding: width * 0.04, 
+    padding: width * 0.04,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: height * 0.07, 
+    marginBottom: height * 0.07,
     marginTop: height * 0.02,
   },
   logo: {
-    width: width * 0.12, 
-    height: width * 0.12, 
+    width: width * 0.12,
+    height: width * 0.12,
     marginRight: width * 0.06,
     marginLeft: width * 0.03,
   },
@@ -365,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ACCAC8',
     borderRadius: 10,
     marginBottom: height * 0.015,
-    height: height * 0.15, 
+    height: height * 0.15,
   },
   projectDetails: {
     flex: 1,

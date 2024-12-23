@@ -291,6 +291,16 @@ const SetupDetail = () => {
     return `${countryCode}${datePart}${randomPart}`;
   };
 
+
+  // function to format the date
+const formatDate = (date) => {
+  const day = String(date.getDate()).padStart(2, '0');  // Ensure two digits for day
+  const month = String(date.getMonth() + 1).padStart(2, '0');  // Ensure two digits for month
+  const year = date.getFullYear();  // Get full year (e.g., 2024)
+  
+  return `${day}/${month}/${year}`;
+};
+
   // Handles date picker changes
   const handleDateChange = (event, selectedDate) => {
     if (event.type === 'set') {
@@ -480,7 +490,7 @@ const SetupDetail = () => {
               style={styles.dateBox}
               placeholder="Select Start Date"
               placeholderTextColor="gray"
-              value={fromDate ? fromDate.toLocaleDateString() : ''}
+              value={fromDate ? formatDate(fromDate) : ''}
               editable={false}
             />
             <Icons
@@ -499,7 +509,7 @@ const SetupDetail = () => {
               style={styles.dateBox}
               placeholder="Select End Date"
               placeholderTextColor="gray"
-              value={toDate ? toDate.toLocaleDateString() : ''}
+              value={toDate ? formatDate(toDate) : ''}
               editable={false}
             />
             <Icons

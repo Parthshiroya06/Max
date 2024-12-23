@@ -21,105 +21,98 @@ import LoginScreen from '../Screens/User/LoginScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Define the bottom tab navigator (MainTabs)
-const MainTabs = () => {
-  return (
-    <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          height: 70, 
-          paddingBottom: 10, 
-          backgroundColor: '#ACCAC8',
-        },
-        tabBarIcon: ({ color, size }) => {
+// Create a stack navigator for each tab
+const HomeStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="HomeMain" component={HomeScreen} />
+    <Stack.Screen name="VialPicture" component={VialPicture} />
+    <Stack.Screen name="HabitatPicture" component={HabitatPicture} />
+  </Stack.Navigator>
+);
 
-          if (route.name === 'Home') {
-            // Use Entypo for Home icon
-            return <Entypo name="home" size={size + 10} color={color} />;
-          }else if (route.name === 'Setup') {
-            // Use Entypo for Home icon
-            return <MaterialCommunityIcons name="plus-box-multiple" size={size + 10} color={color} />;
-          }else if (route.name === 'Collect') {
-            // Use Entypo for Home icon
-            return <MaterialCommunityIcons name="clipboard-text" size={size + 10} color={color} />;
-          }else if (route.name === 'Map') {
-            // Use Entypo for Home icon
-            return <Entypo name="location-pin" size={size + 10} color={color} />;
-          }
+const SetupStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="SetupMain" component={SetupScreen} />
+    <Stack.Screen name="SetupDetail" component={SetupDetail} />
+    <Stack.Screen name="SetupScreen" component={SetupScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
+  </Stack.Navigator>
+);
 
-          return <Icon name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#48938F',
-        tabBarInactiveTintColor: 'black',
-      })}     
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabelStyle: {
-            fontWeight: 'bold', 
-            fontSize: 14, 
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Setup"
-        component={SetupScreen}
-        options={{
-          tabBarLabelStyle: {
-            fontWeight: 'bold', 
-            fontSize: 14, 
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Collect"
-        component={CollectScreen}
-        options={{
-          tabBarLabelStyle: {
-            fontWeight: 'bold', 
-            fontSize: 14, 
-          },
-        }}
-      />
-      <Tab.Screen
-        name="Map"
-        component={MapScreen}
-        options={{
-          tabBarLabelStyle: {
-            fontWeight: 'bold',
-            fontSize: 14, 
-          },
-        }}
-      />
-    </Tab.Navigator>
-  );
-};
+const CollectStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="CollectMain" component={CollectScreen} />
+    <Stack.Screen name="ProjectDetails" component={ProjectDetails} />
+    <Stack.Screen name="CollectDataScreen" component={CollectDataScreen} />
+    <Stack.Screen name="UploadedNoteScreen" component={UploadedData} options={{ headerShown: false }} />
+    <Stack.Screen name="VialPictureUploaded" component={VialPictureUplaoded} options={{ headerShown: false }} />
+    <Stack.Screen name="HabitaPictureUploaded" component={HabitatPictureUploaded} options={{ headerShown: false }} />
+    <Stack.Screen name="Project" component={CollectScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="CollectScreen" component={CollectDataScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="CollectScreen2" component={CollectScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="VialPicture" component={VialPicture} options={{ headerShown: false }}/>
+    <Stack.Screen name="HabitatPicture" component={HabitatPicture} options={{ headerShown: false }}/>
+    <Stack.Screen name="Home2" component={HomeScreen} options={{ headerShown: false }}/>
+  </Stack.Navigator>
+);
 
-// Main Navigation (Stack + Tabs)
+// Define the bottom tab navigator
+const MainTabs = () => (
+  <Tab.Navigator
+    initialRouteName="HomeStack"
+    screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarStyle: {
+        height: 70,
+        paddingBottom: 10,
+        backgroundColor: '#ACCAC8',
+      },
+      tabBarIcon: ({ color, size }) => {
+        if (route.name === 'HomeStack') {
+          return <Entypo name="home" size={size + 10} color={color} />;
+        } else if (route.name === 'SetupStack') {
+          return <MaterialCommunityIcons name="plus-box-multiple" size={size + 10} color={color} />;
+        } else if (route.name === 'CollectStack') {
+          return <MaterialCommunityIcons name="clipboard-text" size={size + 10} color={color} />;
+        } else if (route.name === 'Map') {
+          return <Entypo name="location-pin" size={size + 10} color={color} />;
+        }
+      },
+      tabBarActiveTintColor: '#48938F',
+      tabBarInactiveTintColor: 'black',
+    })}
+  >
+    <Tab.Screen
+      name="HomeStack"
+      component={HomeStack}
+      options={{ tabBarLabel: 'Home' }}
+    />
+    <Tab.Screen
+      name="SetupStack"
+      component={SetupStack}
+      options={{ tabBarLabel: 'Setup' }}
+    />
+    <Tab.Screen
+      name="CollectStack"
+      component={CollectStack}
+      options={{ tabBarLabel: 'Collect' }}
+    />
+    <Tab.Screen
+      name="Map"
+      component={MapScreen}
+      options={{ tabBarLabel: 'Map' }}
+    />
+  </Tab.Navigator>
+);
+
+// Main Navigation
 export default function NavigationScreen() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="CollectDataScreen" component={ProjectDetails} options={{ headerShown: false }} />
-        <Stack.Screen name="CollectScreen" component={CollectDataScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ProjectDetails" component={ProjectDetails} options={{ headerShown: false }} />
-        <Stack.Screen name="Project" component={CollectScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="VialPicture" component={VialPicture} options={{ headerShown: false }}/>
-        <Stack.Screen name="HabitatPicture" component={HabitatPicture} options={{ headerShown: false }}/>
-        <Stack.Screen name="SetupDetail" component={SetupDetail} options={{ headerShown: false }}/>
-        <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
-        <Stack.Screen name="Home2" component={HomeScreen} options={{ headerShown: false }}/>
-        <Stack.Screen name="SetupScreen" component={SetupScreen} options={{ headerShown: false }}/>
-        <Stack.Screen name="CollectScreen2" component={CollectScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="UploadedNoteScreen" component={UploadedData} options={{ headerShown: false }} />
-        <Stack.Screen name="VialPictureUploaded" component={VialPictureUplaoded} options={{ headerShown: false }} />
-        <Stack.Screen name="HabitaPictureUploaded" component={HabitatPictureUploaded} options={{ headerShown: false }} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="MainTabs" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
   );

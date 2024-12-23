@@ -95,7 +95,7 @@ const CollectScreen = () => {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.navigate('Home2')}
             style={styles.backIconContainer}>
             <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>

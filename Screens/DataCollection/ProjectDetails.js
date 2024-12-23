@@ -101,6 +101,7 @@ const ProjectDetails = () => {
         note,
         noteSerial: note.Serial,
         projectId,
+        country: project.country, // Pass the country
       });
     }
   };
@@ -109,6 +110,7 @@ const ProjectDetails = () => {
   const handleAddNotesPress = () => {
     navigation.navigate('CollectScreen', {
       projectId,
+      country: project.country, // Pass the country
     });
   };
 

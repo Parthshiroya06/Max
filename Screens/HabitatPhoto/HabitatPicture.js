@@ -19,8 +19,6 @@ import Dialog from 'react-native-dialog';
 
 const { width, height } = Dimensions.get('window');
 
-const scale = (size) => (width / 375) * size;
-
 
 // Define the HabitatPicture component
 const HabitatPicture = ({ route }) => {
@@ -32,6 +30,10 @@ const HabitatPicture = ({ route }) => {
   const [customImageNames, setCustomImageNames] = useState('');
   const navigation = useNavigation();
   const [note, setNote] = useState(initialNote || null); // State to store the note if not passed initially
+
+
+  const [localityNumber, setLocalityNumber] = useState("01"); // Example for locality number
+    const [countryName, setCountryName] = useState(route.params?.countryName || "AUS"); 
 
 
   // Fetch image data on component mount or when dependencies change
@@ -98,18 +100,45 @@ const HabitatPicture = ({ route }) => {
 
   // Open camera to capture a habitat picture
   const openCameraHabitat = async () => {
-    const options = { mediaType: 'photo', quality: 1 };
-    try {
-      const result = await launchCamera(options);
-      if (result.assets && result.assets.length > 0) {
-        const newImage = { uri: result.assets[0].uri }; // Create a new image object
-        setImagess([...imagess, newImage]);  // Add the new image to the images state
-        setDialogVisibles(true);  // Show the dialog to save the image name
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to open camera.');
-    }
-  };
+          const options = {
+            mediaType: 'photo',
+            cameraType: 'back',
+            quality: 1,
+          };
+        
+          try {
+            const result = await launchCamera(options);
+            if (result.didCancel) {
+              console.log('User cancelled camera');
+            } else if (result.errorCode) {
+              console.error('Camera error: ', result.errorCode);
+              Alert.alert('Camera Error', result.errorMessage);
+            } else if (result.assets && result.assets.length > 0) {
+              const asset = result.assets[0];
+              const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2); // Convert fileSize to MB
+        
+              // Generate the image name automatically
+              const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of the year
+              const expedition = 'E1';
+              const habitatCount = imagess.length + 1; // Increment for each habitat image
+              const generatedImageName = `${countryName.slice(0, 3).toUpperCase()}${year}${expedition}_L${localityNumber}_H${habitatCount}`;
+        
+              const newImage = {
+                uri: asset.uri,
+                name: generatedImageName,
+                sizeMB: sizeInMB,
+              };
+        
+              // Add the new image to the imagess state
+              setImagess([...imagess, newImage]);
+              console.log('Image saved with name:', generatedImageName);
+            }
+          } catch (error) {
+            console.error('Error opening camera: ', error);
+            Alert.alert('Error', 'Failed to open camera');
+          }
+        };
+        
 
   // Handle saving the custom image name
   const handleHabitatSaveImage = async () => {
