@@ -16,6 +16,7 @@ import {useFocusEffect} from '@react-navigation/native';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
+
 // Functional component for rendering each note entry
 const NoteEntry = ({Serial, userName, onPress, isUploaded}) => (
   <TouchableOpacity style={styles.noteEntry} onPress={onPress}>
@@ -180,7 +181,17 @@ const ProjectDetails = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.projectId}>{project.id}</Text>
+      {/* <Text style={styles.projectId}>{project.id}</Text> */}
+      <View style={styles.headerContainer}>
+  <TouchableOpacity
+    onPress={() => navigation.navigate('Home2')}
+    style={styles.backIconContainer}
+  >
+    <Text style={styles.backIcon}>{'\u2039'}</Text>
+  </TouchableOpacity>
+  <Text style={styles.projectId}>{project.id}</Text>
+</View>
+ 
 
       <View style={styles.locationSection}>
         <Text style={styles.location}>
@@ -277,6 +288,7 @@ const ProjectDetails = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -287,9 +299,7 @@ const styles = StyleSheet.create({
   projectId: {
     fontSize: screenWidth * 0.06,
     fontWeight: 'bold',
-    marginBottom: screenHeight * 0.02,
     color: 'black',
-    textAlign: 'center',
   },
   locationSection: {
     marginBottom: screenHeight * 0.015,
@@ -445,6 +455,22 @@ const styles = StyleSheet.create({
   toggleText: {
     color: 'blue',
     fontSize: 16,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: screenHeight * 0.02,
+  },
+  backIconContainer: {
+    marginRight: screenWidth * 0.17,
+    marginLeft: screenWidth * 0.058,
+    marginBottom: screenHeight * 0.01,
+  },
+  backIcon: {
+    fontSize: screenWidth * 0.10,
+    fontWeight: 'bold',
+    color: 'black',
   },
 });
 
