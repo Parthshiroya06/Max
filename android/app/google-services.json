@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "103859574753",
+    "project_id": "gchbj-8d855",
+    "storage_bucket": "gchbj-8d855.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103859574753:android:1dd04b716467b4662d64a0",
+        "android_client_info": {
+          "package_name": "com.goettingen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG2dmHjh2-Cmapbu6ZZndLmXUIfbdvhnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -17,6 +17,8 @@ import HabitatPicture from '../Screens/HabitatPhoto/HabitatPicture';
 import MapScreen from '../Screens/Map/MapsScreen';
 import HomeScreen from '../Screens/Home/HomeScreen';
 import LoginScreen from '../Screens/User/LoginScreen';
+import SignUpScreen from '../Screens/User/SignUpScreen';
+import ProfileScreen from '../Screens/ProfileScreens/ProfileScreens';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,6 +29,7 @@ const HomeStack = () => (
     <Stack.Screen name="HomeMain" component={HomeScreen} />
     <Stack.Screen name="VialPicture" component={VialPicture} />
     <Stack.Screen name="HabitatPicture" component={HabitatPicture} />
+    <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
   </Stack.Navigator>
 );
 
@@ -113,6 +116,9 @@ export default function NavigationScreen() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+        
+
       </Stack.Navigator>
     </NavigationContainer>
   );

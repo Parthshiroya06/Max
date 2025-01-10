@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,11 @@ import {
   Dimensions,
   PixelRatio,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth'; // Import auth for user authentication
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {Svg, Circle} from 'react-native-svg';
+import { Svg, Circle } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // DonutChart component renders a circular chart showing progress of different statuses
 const DonutChart = () => {
@@ -60,46 +62,108 @@ const DonutChart = () => {
         rotation={-90}
         origin={`${size / 2}, ${size / 2}`}
       />
-      <Circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        stroke="#EEEEEE"
-        strokeWidth={strokeWidth}
-        fill="none"
-        strokeDasharray={`${notStartedProgress * circumference}, ${circumference}`}
-        strokeDashoffset={-(uploadedProgress + pendingProgress) * circumference}
-        rotation={-90}
-        origin={`${size / 2}, ${size / 2}`}
-      />
     </Svg>
   );
 };
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({ navigation }) => {
   const [liveProjects, setLiveProjects] = useState([]); // State for live projects
+  const [allocatedProjects, setAllocatedProjects] = useState([]); // State for allocated projects
   const [refreshing, setRefreshing] = useState(false); // State for refresh control
+  const totalCreated = allocatedProjects.length;
+  const totalAllocated = allocatedProjects.filter(project => project.isAllocated).length;
+  const totalCount = totalCreated + totalAllocated;
+  const uploadedCount = allocatedProjects.filter(project => project.isUploaded).length;
+  const pendingCount = totalCreated - uploadedCount;
 
+  // Fetch projects from Firestore
   const fetchProjects = useCallback(async () => {
     try {
-      const data = await AsyncStorage.getItem('projects'); // Replace 'projects' with your AsyncStorage key
-      const projects = data ? JSON.parse(data) : [];
-      const currentDate = new Date();
+      const user = auth().currentUser; // Get the logged-in user
+      if (user && user.email) {
+        // Fetch live projects for the user from Firestore
+        const userProjectsRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('projects');
 
-      // Filter projects that are currently live
-      const live = projects.filter(
-        project => new Date(project.fromDate) <= currentDate,
-      );
+        const snapshot = await userProjectsRef.get();
+        const projects = snapshot.docs.map(doc => doc.data());
 
-      setLiveProjects(live); // Update live projects state
+        const currentDate = new Date();
+        // Filter projects that are currently live
+        const live = projects.filter(
+          project => new Date(project.fromDate) <= currentDate,
+        );
+
+        setLiveProjects(live); // Update live projects state
+        // Save live projects to AsyncStorage
+        await AsyncStorage.setItem('liveProjects', JSON.stringify(live));
+      }
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('Error fetching live projects:', error);
     }
   }, []);
 
+  // Fetch allocated projects from Firestore
+  const fetchAllocatedProjects = useCallback(async () => {
+    try {
+      const user = auth().currentUser; // Get the logged-in user
+      if (user && user.email) {
+        // Fetch allocated projects for the user from Firestore
+        const allocatedProjectsRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('Allocated Project');
+
+        const snapshot = await allocatedProjectsRef.get();
+        const projects = snapshot.docs.map(doc => doc.data());
+
+        setAllocatedProjects(projects); // Update allocated projects state
+
+        // Save allocated projects to AsyncStorage
+        await AsyncStorage.setItem('allocatedProjects', JSON.stringify(projects));
+      }
+    } catch (error) {
+      console.error('Error fetching allocated projects:', error);
+    }
+  }, []);
+
+  const loadOfflineData = useCallback(async () => {
+    try {
+      const savedLiveProjects = await AsyncStorage.getItem('liveProjects');
+      const savedAllocatedProjects = await AsyncStorage.getItem('allocatedProjects');
+
+      if (savedLiveProjects) setLiveProjects(JSON.parse(savedLiveProjects));
+      if (savedAllocatedProjects) setAllocatedProjects(JSON.parse(savedAllocatedProjects));
+    } catch (error) {
+      console.error('Error loading offline data:', error);
+    }
+  }, []);
+
+
+  // useEffect(() => {
+  //   fetchProjects();
+  //   fetchAllocatedProjects();
+  // }, [fetchProjects, fetchAllocatedProjects]);
+
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    const checkConnectionAndFetch = async () => {
+      try {
+        // Simulate an online/offline check (replace with a real network status check if needed)
+        const online = true; // Replace with actual connection check logic
+        if (online) {
+          fetchProjects();
+          fetchAllocatedProjects();
+        } else {
+          await loadOfflineData();
+        }
+      } catch (error) {
+        console.error('Error in connection check:', error);
+      }
+    };
+    checkConnectionAndFetch();
+  }, [fetchProjects, fetchAllocatedProjects, loadOfflineData]);
 
   // Refresh function for pull-to-refresh
   const onRefresh = useCallback(() => {
@@ -108,12 +172,13 @@ const HomeScreen = ({navigation}) => {
   }, [fetchProjects]);
 
   // Renders individual project items
-  const renderProject = ({item}) => (
+  const renderProject = ({ item }) => (
     <TouchableOpacity
       style={styles.projectItem}
       onPress={() =>
-        navigation.navigate('ProjectDetails', {projectId: item.id})
-      }>
+        navigation.navigate('ProjectDetails', { projectId: item.id })
+      }
+    >
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
@@ -140,19 +205,24 @@ const HomeScreen = ({navigation}) => {
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Header Section */}
       <View style={styles.header}>
-        <Image source={{uri: 'logo5'}} style={styles.logo} />
+        <Image source={{ uri: 'logo5' }} style={styles.logo} />
         <View style={styles.headerTextContainer}>
           <Text style={styles.instituteName}>Max Planck Institute</Text>
-          <Text style={styles.instituteDesc}>
-            For multidisciplinary Sciences
-          </Text>
+          <Text style={styles.instituteDesc}>For multidisciplinary Sciences</Text>
         </View>
+        <TouchableOpacity
+          style={styles.profileIcon}
+          onPress={() => navigation.navigate('ProfileScreen')} // Navigate to ProfileScreen
+        >
+          <Icon name="account-circle" size={43} color="black" />
+        </TouchableOpacity>
       </View>
+
+      
 
       {/* Total Projects Section */}
       <View style={styles.totalProjects}>
@@ -160,34 +230,19 @@ const HomeScreen = ({navigation}) => {
         <View style={styles.projectContent}>
           <View style={styles.donutChart}>
             <DonutChart />
-            <Text style={styles.totalCount}>43</Text>
+            <Text style={styles.totalCount}>{totalCount}</Text>
           </View>
           <View style={styles.statusLegend}>
             <View style={styles.statusRow}>
-              <View
-                style={[styles.statusColorBox, {backgroundColor: '#48938F'}]}
-              />
+              <View style={[styles.statusColorBox, { backgroundColor: '#48938F' }]} />
               <Text style={styles.statusText}>
-                <Text style={{fontWeight: 'bold', fontSize: 15}}>32</Text>{' '}
-                Uploaded
+                <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{uploadedCount}</Text> Uploaded
               </Text>
             </View>
             <View style={styles.statusRow}>
-              <View
-                style={[styles.statusColorBox, {backgroundColor: '#ACCAC8'}]}
-              />
+              <View style={[styles.statusColorBox, { backgroundColor: '#ACCAC8' }]} />
               <Text style={styles.statusText}>
-                <Text style={{fontWeight: 'bold', fontSize: 16}}>6</Text>{' '}
-                Pending
-              </Text>
-            </View>
-            <View style={styles.statusRow}>
-              <View
-                style={[styles.statusColorBox, {backgroundColor: '#EEEEEE'}]}
-              />
-              <Text style={styles.statusText}>
-                <Text style={{fontWeight: 'bold', fontSize: 16}}>5</Text> Total
-                uploaded
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{pendingCount}</Text> Pending
               </Text>
             </View>
           </View>
@@ -197,7 +252,7 @@ const HomeScreen = ({navigation}) => {
       {/* Live Projects Section */}
       <Text style={styles.sectionTitle}>Live Projects</Text>
       <FlatList
-        data={liveProjects}
+        data={allocatedProjects}
         renderItem={renderProject}
         keyExtractor={item => item.id}
         style={styles.projectList}
@@ -206,9 +261,9 @@ const HomeScreen = ({navigation}) => {
   );
 };
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// Helper function to scale font size based on device pixel ratio
+
 const scaleFont = size => size * PixelRatio.getFontScale();
 
 const styles = StyleSheet.create({
@@ -346,6 +401,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: height * -0.06,
+  },
+  profileIcon: {
+    marginLeft: 'auto',
   },
 });
 

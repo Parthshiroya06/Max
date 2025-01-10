@@ -15,51 +15,79 @@ import {
 } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useUploadStatus} from '../../ContextAPI/UploadStatusProvider';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const {width, height} = Dimensions.get('window');
 
 const CollectScreen = () => {
-  const navigation = useNavigation(); // Hook to handle navigation
-  const route = useRoute(); // Hook to access route parameters
-  const [projects, setProjects] = useState([]); // State to store project data
-  const {getProjectStatus} = useUploadStatus(); // Use the project status function from UploadStatusProvider
-  const [uploadedNotes, setUploadedNotes] = useState([]); // State to store uploaded notes
+  const navigation = useNavigation();
+  const route = useRoute();
+  const [allocatedProjects, setAllocatedProjects] = useState([]);
+  const [uploadedNotes, setUploadedNotes] = useState([]);
+  const [liveProjects, setLiveProjects] = useState([]);
 
-  // Load projects from AsyncStorage and update the projects array
-  const loadProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async () => {
     try {
-      const storedProjects = await AsyncStorage.getItem('projects');
-      if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects);
+      const user = auth().currentUser;
+      if (user && user.email) {
+        const userProjectsRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('projects');
 
-        // Update each project's status based on upload state
-        const projectsWithStatus = parsedProjects.map(project => ({
-          ...project,
-          isUploaded: getProjectStatus(project.id), // Check if the project is uploaded
-        }));
-        setProjects(projectsWithStatus); // Update the state with the projects and their status
+        const snapshot = await userProjectsRef.get();
+        const projects = snapshot.docs.map(doc => doc.data());
+
+        const currentDate = new Date();
+        const live = projects.filter(
+          project => new Date(project.fromDate) <= currentDate,
+        );
+
+        setLiveProjects(live);
       }
     } catch (error) {
-      console.error('Error loading projects from AsyncStorage:', error);
+      console.error('Error fetching live projects:', error);
     }
-  }, [getProjectStatus]);
+  }, []);
 
-  // Load projects whenever the screen is focused
+  const fetchAllocatedProjects = useCallback(async () => {
+    try {
+      const user = auth().currentUser;
+      if (user && user.email) {
+        const allocatedProjectsRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('Allocated Project');
+
+        const snapshot = await allocatedProjectsRef.get();
+        const projects = snapshot.docs.map(doc => doc.data());
+
+        setAllocatedProjects(projects);
+      }
+    } catch (error) {
+      console.error('Error fetching allocated projects:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+    fetchAllocatedProjects();
+  }, [fetchProjects, fetchAllocatedProjects]);
+
   useFocusEffect(
     useCallback(() => {
-      loadProjects();
-    }, [loadProjects]),
+      fetchProjects();
+      fetchAllocatedProjects();
+    }, [fetchProjects, fetchAllocatedProjects]),
   );
 
-  // Set uploaded notes from route params if available
   useEffect(() => {
     if (route.params?.uploadedNotes) {
       setUploadedNotes(route.params.uploadedNotes);
     }
   }, [route.params?.uploadedNotes]);
 
-  // Render each project item in the list
   const renderProject = ({item}) => (
     <TouchableOpacity
       style={[styles.projectItem, item.isUploaded && styles.disabled]}
@@ -69,8 +97,7 @@ const CollectScreen = () => {
       <View style={styles.projectDetails}>
         <Text style={styles.projectID}>{item.id}</Text>
         <Text style={styles.CityCountry}>
-          {item.cityName|| 'No city'} ,{' '}
-          {item.country || 'No country'}
+          {item.cityName || 'No city'}, {item.country || 'No country'}
         </Text>
         <Text style={styles.Date}>
           {item.fromDate && item.toDate
@@ -99,16 +126,14 @@ const CollectScreen = () => {
             style={styles.backIconContainer}>
             <Text style={styles.backIcon}>{'\u2039'}</Text>
           </TouchableOpacity>
-          <Text style={styles.header}> My Projects</Text>
+          <Text style={styles.header}>My Projects</Text>
         </View>
 
         <FlatList
-          data={projects}
+          data={allocatedProjects}
           renderItem={renderProject}
-          ListEmptyComponent={
-            <Text style={styles.emptyComponent}>No projects available</Text>
-          }
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item.id}
+          style={styles.projectList}
         />
       </View>
     </ScrollView>
@@ -196,3 +221,4 @@ const styles = StyleSheet.create({
 });
 
 export default CollectScreen;
+
