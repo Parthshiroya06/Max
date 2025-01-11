@@ -85,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
         const userProjectsRef = firestore()
           .collection('UserInformation')
           .doc(user.email)
-          .collection('projects');
+          .collection('Project Created');
 
         const snapshot = await userProjectsRef.get();
         const projects = snapshot.docs.map(doc => doc.data());

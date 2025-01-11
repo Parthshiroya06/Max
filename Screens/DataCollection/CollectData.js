@@ -572,16 +572,13 @@ const openCameravial = async () => {
   onPress={() => {
     const randomSize = (Math.random() * (9 - 3) + 3).toFixed(1);  // Generates a random number between 3 and 9 with one decimal place
 
-    // Log projectId to ensure it is defined
    
     const projectId = route.params?.projectId;
     
-    console.log('projectIdcgh:', projectId);
     const noteNumber = route.params?.note
         ? route.params.note.Serial // If editing, keep the same Serial
         : `Note 0${notes.length + 1}`; // New note gets the next number
 
-        console.log('noteNumber:', noteNumber);
 
     // Check if projectId exists before navigating
     if (projectId) {

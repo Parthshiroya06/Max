@@ -25,53 +25,59 @@ import React, { useState, useCallback } from 'react';
      const user = auth().currentUser;
      return user ? user.email : null;
    };
- 
+
    const loadProjectDetails = async () => {
-    try {
-      const userEmail = getUserEmail();
-      if (!userEmail) {
-        console.error('No logged-in user email found.');
-        return;
-      }
-  
-      const projectRef = firestore()
-        .collection('UserInformation')
-        .doc(userEmail)
-        .collection('Allocated Project')
-        .doc(projectId);
-  
-      // Check Firestore's connection status
-      const isConnected = await firestore().settings({ persistence: false });
-  
-      if (isConnected) {
-        // If online, fetch from Firestore
-        const projectDoc = await projectRef.get();
-        if (projectDoc.exists) {
-          const projectData = projectDoc.data();
-          setProject(projectData);
-  
-          // Fetch notes from Firestore
-          const notesSnapshot = await projectRef.collection('Uploaded Note').get();
-          const notes = notesSnapshot.docs.map(doc => doc.data());
-          setUploadedNotes(notes);
-  
-          // Sync with AsyncStorage
-          await AsyncStorage.setItem(projectId, JSON.stringify(notes));
-          console.log('Fetched from Firestore and synced with AsyncStorage.');
-        } else {
-          console.error('Project not found for the given ID.');
-        }
-      } else {
-        // If offline, fetch from AsyncStorage
-        const storedNotes = await AsyncStorage.getItem(projectId);
-        const notes = storedNotes ? JSON.parse(storedNotes) : [];
-        setUploadedNotes(notes);
-        console.log('Fetched from AsyncStorage due to no network.');
-      }
-    } catch (error) {
-      console.error('Error loading project details:', error);
-    }
-  };
+     try {
+       console.log('Loading project details...');
+       const userEmail = getUserEmail();
+       if (!userEmail) {
+         console.error('No logged-in user email found.');
+         return;
+       }
+       console.log('User email:', userEmail);
+   
+       // Firestore reference for the project
+       const projectRef = firestore()
+         .collection('UserInformation')
+         .doc(userEmail)
+         .collection('Allocated Project')
+         .doc(projectId);
+   
+       // Try to fetch the project details from Firestore
+       const projectDoc = await projectRef.get();
+       if (projectDoc.exists) {
+         const projectData = projectDoc.data();
+         console.log('Fetched project data:', projectData);
+         setProject(projectData);
+       } else {
+         console.error('Project not found in Firestore for the given ID.');
+       }
+   
+       // Fetch notes from Firestore
+       const notesSnapshot = await projectRef.collection('Uploaded Note').get();
+       if (!notesSnapshot.empty) {
+         const notes = notesSnapshot.docs.map(doc => doc.data());
+         console.log('Fetched notes from Firestore:', notes);
+         setUploadedNotes(notes);
+   
+         // Sync fetched notes with AsyncStorage
+         await AsyncStorage.setItem(projectId, JSON.stringify(notes));
+         console.log('Notes synced with AsyncStorage.');
+       } else {
+         console.log('No notes found in Firestore. Fetching from AsyncStorage...');
+   
+         // Fetch notes from AsyncStorage if Firestore has no notes
+         const storedNotes = await AsyncStorage.getItem(projectId);
+         const notes = storedNotes ? JSON.parse(storedNotes) : [];
+         console.log('Fetched notes from AsyncStorage:', notes);
+         setUploadedNotes(notes);
+       }
+     } catch (error) {
+       console.error('Error loading project details:', error);
+     }
+   };
+   
+
   
  
    // Reload project details whenever the screen comes into focus
