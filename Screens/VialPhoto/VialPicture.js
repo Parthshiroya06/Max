@@ -8,34 +8,45 @@ import {
   FlatList,
   Dimensions,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
+import {launchCamera} from 'react-native-image-picker';
+import Dialog from 'react-native-dialog';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+
+
 
 const {width, height} = Dimensions.get('window');
 
-// Define the VialPicture component
 const VialPicture = ({route}) => {
-  const {projectId, serial, note: initialNote} = route.params; // Extract route parameters
-  const [note, setNote] = useState(initialNote || null); // State to store the note if not passed initially
-  const [images, setImages] = useState([]); // To store all images
-  const [showImage, setShowImage] = useState(false); // State to toggle visibility
-  const [selectedImage, setSelectedImage] = useState(null); // Track selected image for full view
+  const {projectId, serial, note: initialNote} = route.params;
+  const [note, setNote] = useState(initialNote || null);
+  const [images, setImages] = useState([]);
+  const [showImage, setShowImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const navigation = useNavigation();
 
-  // Fetch image data on component mount or when dependencies change
+  const [dialogVisibles, setDialogVisibles] = useState(false);
+  const [customImageNames, setCustomImageNames] = useState('');
+  const [country, setCountryName] = useState(route.params?.country || 'AUS');
+  
+
   useEffect(() => {
+    console.log('Country:', country);
     const fetchImageData = async () => {
       try {
-        const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
+        const projectData = await AsyncStorage.getItem(projectId);
         if (projectData) {
-          const parsedData = JSON.parse(projectData);  // Parse the project data
-          const fetchedNote = parsedData.find(n => n.Serial === serial); // Find the specific note by serial
+          const parsedData = JSON.parse(projectData);
+          const fetchedNote = parsedData.find(n => n.Serial === serial);
           if (fetchedNote) {
-            setNote(fetchedNote); // Set note if not already available
-            setImages(fetchedNote.images); // Set all images from the note
+            setNote(fetchedNote);
+            setImages(fetchedNote.images || []);
           } else {
             console.error('Note not found for serial:', serial);
           }
@@ -46,79 +57,176 @@ const VialPicture = ({route}) => {
     };
 
     if (!initialNote) {
-      fetchImageData(); // Fetch image data if initialNote is not provided
+      fetchImageData();
     }
   }, [projectId, serial, initialNote]);
 
-  // Handle image press to show image preview
+
+  const getProjectNumber = async () => {
+    try {
+      const user = auth().currentUser;
+      if (user && user.email) {
+        const projectRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('Allocated Project')
+          .doc(projectId);
+
+        const projectSnapshot = await projectRef.get();
+        if (projectSnapshot.exists) {
+          const projectData = projectSnapshot.data();
+          return parseInt(projectData.Number, 10); // Assuming Number field holds the project number
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching project number:', error);
+    }
+  };
+
+
+
+  const saveImagesToStorage = async updatedImages => {
+    try {
+      const projectData = await AsyncStorage.getItem(projectId);
+      if (projectData) {
+        const parsedData = JSON.parse(projectData);
+        const noteIndex = parsedData.findIndex(n => n.Serial === serial);
+
+        if (noteIndex !== -1) {
+          parsedData[noteIndex].images = updatedImages;
+          await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
+        }
+      }
+    } catch (error) {
+      console.error('Error saving images:', error);
+    }
+  };
+
   const handleImagePress = image => {
     setSelectedImage(image);
     setShowImage(true);
   };
 
-  // Handle back press to close image preview
   const handleBackPress = () => {
     setShowImage(false);
     setSelectedImage(null);
   };
 
-  // Handle deleting an image
-  const handleDeleteImage = async (imageUri) => {
-  try {
-    console.log('Deleting image with URI:', imageUri);  
-
-    // Remove selected image from the 'images' array
-    const updatedImages = images.filter(image => image.uri !== imageUri); // Remove the image from the list
-    console.log('Updated images array after deletion:', updatedImages);
-
-    // Update the images state
-    setImages(updatedImages);
-
-    // If note is already set, update the note object as well
-    if (note) {
-      setNote(prevNote => ({
-        ...prevNote,
-        images: updatedImages,  // Update the images in the note
-      }));
-    }
-
-    // Fetch the project data from AsyncStorage
-    const projectData = await AsyncStorage.getItem(projectId);
-    if (projectData) {
-      const parsedData = JSON.parse(projectData);
-
-      // Find the note in the project data
-      const noteIndex = parsedData.findIndex(n => n.Serial === serial);
-
-      if (noteIndex > -1) {
-        // Update the images in the note
-        parsedData[noteIndex].images = updatedImages;
-       
-        // Save the updated project data to AsyncStorage
-        await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
-        console.log('Successfully saved updated project data to AsyncStorage.');
-      } else {
-        console.error('Note not found in project data.');
-      }
-    } else {
-      console.error('Project data not found in AsyncStorage.');
-    }
-  } catch (error) {
-    console.error('Error deleting image:', error);
-  }
-};
-
+  const openCameraHabitat = async () => {
+    const options = {
+      mediaType: 'photo',
+      cameraType: 'back',
+      quality: 1,
+    };
   
+    try {
+      const result = await launchCamera(options);
+      if (result.didCancel) {
+        console.log('User cancelled camera');
+      } else if (result.errorCode) {
+        console.error('Camera error: ', result.errorCode);
+        Alert.alert('Camera Error', result.errorMessage);
+      } else if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2);
+  
+        const projectNumber = await getProjectNumber();
+        console.log('Fetched Project Number:', projectNumber); // Log project number
+  
+        if (!projectNumber) {
+          Alert.alert('Error', 'Unable to fetch project number');
+          return;
+        }
+  
+        const expedition = `E${projectNumber}`;
+        console.log('Expedition:', expedition); // Log expedition value
+  
+        const generatedImageName = (country, noteSerial, expedition) => {
+          const year = new Date().getFullYear().toString().slice(-2);
+          const serialNumber = noteSerial.replace(/\D/g, '').replace(/^0+/, '');
+          return `${country.slice(0, 3).toUpperCase()}${year}${expedition}_L${serialNumber}_vial`;
+        };
+  
+        const newImage = {
+          uri: asset.uri,
+          name: generatedImageName(country, serial, expedition),
+          sizeMB: sizeInMB,
+        };
+  
+        // Update images array with new image
+        setImages(prevImages => [...prevImages, newImage]);
+  
+        if (note) {
+          const updatedNote = {
+            ...note,
+            images: [...images, newImage],
+          };
+          setNote(updatedNote); // Ensure note state is updated
+        }
+  
+        console.log('Image saved with name:', generatedImageName);
+  
+        await saveImagesToStorage([...images, newImage]);
+      }
+    } catch (error) {
+      console.error('Error opening camera: ', error);
+      Alert.alert('Error', 'Failed to open camera');
+    }
+  };
+  
+
+  const handleHabitatSaveImage = async () => {
+    if (!customImageNames.trim()) {
+      Alert.alert('Error', 'Please enter a valid name for the image.');
+      return;
+    }
+
+    try {
+      const lastImageIndex = images.length - 1;
+      const updatedImage = {...images[lastImageIndex], name: customImageNames};
+      const updatedImages = [...images];
+      updatedImages[lastImageIndex] = updatedImage;
+
+      setImages(updatedImages);
+      await saveImagesToStorage(updatedImages);
+
+      if (note) {
+        setNote(prevNote => ({
+          ...prevNote,
+          images: updatedImages,
+        }));
+      }
+
+      setCustomImageNames('');
+      setDialogVisibles(false);
+    } catch (error) {
+      console.error('Error saving custom image name:', error);
+    }
+  };
+
+  const handleDeleteImage = async imageUri => {
+    try {
+      const updatedImages = images.filter(image => image.uri !== imageUri);
+      setImages(updatedImages);
+
+      if (note) {
+        setNote(prevNote => ({
+          ...prevNote,
+          images: updatedImages,
+        }));
+      }
+
+      await saveImagesToStorage(updatedImages);
+    } catch (error) {
+      console.error('Error deleting image:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {showImage && selectedImage ? (
         <View style={styles.imagePreviewContainer}>
-          <Image
-            source={{uri: selectedImage.uri}}
-            style={styles.imagePreview}
-            resizeMode="contain"
-          />
+          <Image source={{uri: selectedImage.uri}} style={styles.imagePreview} resizeMode="contain" />
           <TouchableOpacity onPress={handleBackPress}>
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -127,13 +235,9 @@ const VialPicture = ({route}) => {
         <>
           <View style={styles.headerContainer}>
             <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('CollectScreen' , {
-                 note,  // Pass the updated note
-                projectId,
-            });
-            }}
-            >
+              onPress={() => {
+                navigation.navigate('CollectScreen', {note, projectId});
+              }}>
               <Text style={styles.backText2}>{'\u2039'}</Text>
             </TouchableOpacity>
             <Text style={styles.header}>Vial Picture</Text>
@@ -143,31 +247,33 @@ const VialPicture = ({route}) => {
             data={images}
             keyExtractor={(item, index) => `${item.uri}-${index}`}
             renderItem={({item}) => (
-              <TouchableOpacity
-                style={styles.noteEntry}
-                onPress={() => handleImagePress(item)}
-              >
+              <TouchableOpacity style={styles.noteEntry} onPress={() => handleImagePress(item)}>
                 <View style={styles.iconContainer}>
                   <FontAwesome name="file-picture-o" size={34} color="black" />
                 </View>
                 <View style={styles.noteInfo}>
-                  <Text style={styles.imageName}>
-                    {item.name || 'Unnamed'}.jpeg
-                  </Text>
+                  <Text style={styles.imageName}>{item.name || 'Unnamed'}.jpeg</Text>
                   <Text style={styles.imageSize}>{item.sizeMB || '0'}MB</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.iconContainer2}
-                  onPress={() => handleDeleteImage(item.uri)}
-                >
+                <TouchableOpacity style={styles.iconContainer2} onPress={() => handleDeleteImage(item.uri)}>
                   <Icon name="delete" size={32} color="black" />
                 </TouchableOpacity>
               </TouchableOpacity>
             )}
-            contentContainerStyle={styles.listContent}
           />
+          <TouchableOpacity style={styles.captureButton} onPress={openCameraHabitat}>
+            <FontAwesome name="camera" size={20} color="black" />
+            <Text style={styles.captureButtonText}>Capture</Text>
+          </TouchableOpacity>
         </>
       )}
+
+      <Dialog.Container visible={dialogVisibles}>
+        <Dialog.Title>Save Image</Dialog.Title>
+        <Dialog.Input value={customImageNames} onChangeText={setCustomImageNames} placeholder="Image name" />
+        <Dialog.Button label="Cancel" onPress={() => setDialogVisibles(false)} />
+        <Dialog.Button label="Save" onPress={handleHabitatSaveImage} />
+      </Dialog.Container>
     </SafeAreaView>
   );
 };
@@ -250,3 +356,6 @@ const styles = StyleSheet.create({
 });
 
 export default VialPicture;
+
+
+

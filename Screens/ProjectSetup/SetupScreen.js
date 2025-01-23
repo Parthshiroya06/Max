@@ -4,8 +4,8 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUploadStatus } from '../../ContextAPI/UploadStatusProvider';
-import auth from '@react-native-firebase/auth'; // Correct auth import
-import firestore from '@react-native-firebase/firestore'; // Correct firestore import
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,15 +15,21 @@ const SetupScreen = () => {
   const [projects, setProjects] = useState([]);
   const { getProjectStatus } = useUploadStatus();
   const [uploadedNotes, setUploadedNotes] = useState([]);
-  const [loading, setLoading] = useState(false);  // Loading state for Firebase fetch
-  const [error, setError] = useState(null); // Error state for displaying errors
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Helper function to format dates
+  const formatDate = (dateString) => {
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    return new Intl.DateTimeFormat('en-GB', options).format(new Date(dateString));
+  };
 
   // Load projects from Firebase or AsyncStorage
   const loadProjects = useCallback(async () => {
-    setLoading(true); // Start loading
-    setError(null);   // Clear any previous errors
+    setLoading(true);
+    setError(null);
     try {
-      const user = auth().currentUser; // Firebase auth check (using @react-native-firebase)
+      const user = auth().currentUser;
       if (user && user.email) {
         const userProjectsRef = firestore()
           .collection('UserInformation')
@@ -40,24 +46,22 @@ const SetupScreen = () => {
           ...doc.data(),
         }));
 
-        // Update each project's status based on upload state
         const projectsWithStatus = firebaseProjects.map(project => ({
           ...project,
           isUploaded: getProjectStatus(project.id),
         }));
         setProjects(projectsWithStatus);
 
-        // Optionally, store the fetched projects in AsyncStorage
         await AsyncStorage.setItem('projects', JSON.stringify(projectsWithStatus));
       } else {
         throw new Error('User is not logged in');
       }
     } catch (error) {
       console.log('Error fetching projects from Firebase, fallback to AsyncStorage:', error);
-      setError(error.message);  // Set the error message to be displayed
-      loadProjectsFromAsyncStorage(); // Fallback to AsyncStorage
+      setError(error.message);
+      loadProjectsFromAsyncStorage();
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   }, [getProjectStatus]);
 
@@ -78,21 +82,18 @@ const SetupScreen = () => {
     }
   };
 
-  // Fetch projects when component mounts or when route params change
   useFocusEffect(
     useCallback(() => {
-      loadProjects();  // Load projects when screen comes into focus
+      loadProjects();
     }, [loadProjects]),
   );
 
-  // Set uploaded notes from route params if available
   useEffect(() => {
     if (route.params?.uploadedNotes) {
       setUploadedNotes(route.params.uploadedNotes);
     }
   }, [route.params?.uploadedNotes]);
 
-  // Render each project item in the list
   const renderProject = ({ item }) => (
     <TouchableOpacity
       style={[styles.projectItem, !item.isUploaded && styles.disabled]}
@@ -109,9 +110,7 @@ const SetupScreen = () => {
         </Text>
         <Text style={styles.Date}>
           {item.fromDate && item.toDate
-            ? `${new Date(item.fromDate).toLocaleDateString()} - ${new Date(
-                item.toDate,
-              ).toLocaleDateString()}`
+            ? `${formatDate(item.fromDate)} - ${formatDate(item.toDate)}`
             : 'No date range'}
         </Text>
       </View>
@@ -157,7 +156,6 @@ const SetupScreen = () => {
           />
         )}
 
-        {/* Button to Create New Project */}
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate('SetupDetail')}>

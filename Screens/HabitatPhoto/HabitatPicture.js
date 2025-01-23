@@ -15,43 +15,33 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { launchCamera } from 'react-native-image-picker';
-import Dialog from 'react-native-dialog';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const { width, height } = Dimensions.get('window');
 
-
-// Define the HabitatPicture component
 const HabitatPicture = ({ route }) => {
-  const { projectId, serial ,  note: initialNote } = route.params;
+  const { projectId, serial, note: initialNote } = route.params;
   const [imagess, setImagess] = useState([]);
   const [showImage, setShowImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [dialogVisibles, setDialogVisibles] = useState(false);
-  const [customImageNames, setCustomImageNames] = useState('');
   const navigation = useNavigation();
-  const [note, setNote] = useState(initialNote || null); // State to store the note if not passed initially
+  const [note, setNote] = useState(initialNote || null);
 
+  const [localityNumber, setLocalityNumber] = useState('01');
+  const [country, setCountryName] = useState(route.params?.country || 'AUS');
 
-  const [localityNumber, setLocalityNumber] = useState("01"); // Example for locality number
-    const [countryName, setCountryName] = useState(route.params?.countryName || "AUS"); 
-
-
-  // Fetch image data on component mount or when dependencies change
   useEffect(() => {
+    console.log('Country:', country);
     const fetchImageData = async () => {
       try {
-        const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
+        const projectData = await AsyncStorage.getItem(projectId);
         if (projectData) {
-          const parsedData = JSON.parse(projectData); // Parse the project data
-
-
-          const fetchedNote = parsedData.find(n => n.Serial === serial); // Find the specific note by serial
+          const parsedData = JSON.parse(projectData);
+          const fetchedNote = parsedData.find((n) => n.Serial === serial);
           if (fetchedNote) {
-            setNote(fetchedNote); // Set note if not already available
-            setImagess(fetchedNote.imagess); // Set all images from the note
-
-            
-            
+            setNote(fetchedNote);
+            setImagess(fetchedNote.imagess || []);
           } else {
             console.error('Note not found for serial:', serial);
           }
@@ -62,188 +52,148 @@ const HabitatPicture = ({ route }) => {
     };
 
     if (!initialNote) {
-      fetchImageData(); // Fetch image data if initialNote is not provided
+      fetchImageData();
     }
   }, [projectId, serial, initialNote]);
 
-  // Save updated images to storage
-  const saveImagesToStorage = async (updatedImagess) => {
+  const saveImagesToStorage = async (updatedImages) => {
     try {
       const projectData = await AsyncStorage.getItem(projectId);
       if (projectData) {
         const parsedData = JSON.parse(projectData);
         const noteIndex = parsedData.findIndex((n) => n.Serial === serial);
 
-        
         if (noteIndex !== -1) {
-          parsedData[noteIndex].imagess = updatedImagess;
+          parsedData[noteIndex].imagess = updatedImages;
           await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
-
         }
       }
     } catch (error) {
       console.error('Error saving images:', error);
     }
   };
-  
-  // Handle image press to show image preview
-  const handleImagePress = (image) => {
-    setSelectedImage(image);
-    setShowImage(true);
-  };
 
-  // Handle back press to close image preview
-  const handleBackPress = () => {
-    setShowImage(false);
-    setSelectedImage(null);
-  };
+  const getProjectNumber = async () => {
+    try {
+      const user = auth().currentUser;
+      if (user && user.email) {
+        const projectRef = firestore()
+          .collection('UserInformation')
+          .doc(user.email)
+          .collection('Allocated Project')
+          .doc(projectId);
 
-  // Open camera to capture a habitat picture
-  const openCameraHabitat = async () => {
-          const options = {
-            mediaType: 'photo',
-            cameraType: 'back',
-            quality: 1,
-          };
-        
-          try {
-            const result = await launchCamera(options);
-            if (result.didCancel) {
-              console.log('User cancelled camera');
-            } else if (result.errorCode) {
-              console.error('Camera error: ', result.errorCode);
-              Alert.alert('Camera Error', result.errorMessage);
-            } else if (result.assets && result.assets.length > 0) {
-              const asset = result.assets[0];
-              const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2); // Convert fileSize to MB
-        
-              // Generate the image name automatically
-              const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of the year
-              const expedition = 'E1';
-              const habitatCount = imagess.length + 1; // Increment for each habitat image
-              const generatedImageName = `${countryName.slice(0, 3).toUpperCase()}${year}${expedition}_L${localityNumber}_H${habitatCount}`;
-        
-              const newImage = {
-                uri: asset.uri,
-                name: generatedImageName,
-                sizeMB: sizeInMB,
-              };
-        
-              // Add the new image to the imagess state
-              setImagess([...imagess, newImage]);
-              console.log('Image saved with name:', generatedImageName);
-            }
-          } catch (error) {
-            console.error('Error opening camera: ', error);
-            Alert.alert('Error', 'Failed to open camera');
-          }
-        };
-        
-
-  // Handle saving the custom image name
-  const handleHabitatSaveImage = async () => {
-    if (!customImageNames.trim()) {
-      Alert.alert('Error', 'Please enter a valid name for the image.');
-      return;
+        const projectSnapshot = await projectRef.get();
+        if (projectSnapshot.exists) {
+          const projectData = projectSnapshot.data();
+          return parseInt(projectData.Number, 10);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching project number:', error);
     }
+  };
+
+  const openCameraHabitat = async () => {
+    const options = {
+      mediaType: 'photo',
+      cameraType: 'back',
+      quality: 1,
+    };
   
     try {
-      // Update the last image in the list with the custom name
-      const lastImage = imagess[imagess.length - 1]; // Get the last image in the list
-      const updatedImage = { ...lastImage, name: customImageNames }; // Update the last image with the custom name
-      const updatedImagess = [...imagess]; // Update the images state
-      updatedImagess[imagess.length - 1] = updatedImage; // Update the images state
+      const result = await launchCamera(options);
+      if (result.didCancel) {
+        console.log('User cancelled camera');
+      } else if (result.errorCode) {
+        console.error('Camera error: ', result.errorCode);
+        Alert.alert('Camera Error', result.errorMessage);
+      } else if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2);
   
-      // Save updated image list to AsyncStorage
-      setImagess(updatedImagess);
-      await saveImagesToStorage(updatedImagess);
+        const year = new Date().getFullYear().toString().slice(-2);
+        const projectNumber = await getProjectNumber();
+        const expedition = `E${projectNumber}`;
+        const habitatCount = imagess.length + 1;
+        const generatedImageName = `${country.slice(0, 3).toUpperCase()}${year}${expedition}_L${localityNumber}_H${habitatCount}`;
   
-      // Log the saved image and updated images list
-      console.log('Custom image saved:', updatedImage); // Set the updated images state
-      console.log('Updated images list:', updatedImagess);  // Save updated images to storage
-
-      if (note) {
-        setNote(prevNote => ({
-          ...prevNote,
-          imagess: updatedImagess,  // Update the images in the note
-        }));
+        const newImage = {
+          uri: asset.uri,
+          name: generatedImageName,
+          sizeMB: sizeInMB,
+        };
+  
+        const newImagesList = [...imagess, newImage];
+        setImagess(newImagesList);
+  
+        // Update the note state as well
+        if (note) {
+          const updatedNote = {
+            ...note,
+            imagess: newImagesList,
+          };
+          setNote(updatedNote); // Ensure the note state is updated as well
+        }
+  
+        console.log('Image saved with name:', generatedImageName);
+  
+        // Save images and note to AsyncStorage
+        await saveImagesToStorage(newImagesList);
       }
-  
-      // Clear dialog inputs and close dialog
-      setCustomImageNames('');
-      setDialogVisibles(false);
     } catch (error) {
-      console.error('Error saving custom image name:', error);
+      console.error('Error opening camera: ', error);
+      Alert.alert('Error', 'Failed to open camera');
     }
   };
   
-  // Handle deleting an image
   const handleDeleteImage = async (imageUri) => {
     try {
-      console.log('Deleting image with URI:', imageUri);
-  
-      // Remove selected image from the 'images' array
-      const updatedImagess = imagess.filter(image => image.uri !== imageUri);
-      console.log('Updated images array after deletion:', updatedImagess);
-  
-      // Update the images state
-      setImagess(updatedImagess);
-  
-      // If note is already set, update the note object as well
+      const updatedImages = imagess.filter((image) => image.uri !== imageUri);
+      setImagess(updatedImages);
+
       if (note) {
-        setNote(prevNote => ({
+        setNote((prevNote) => ({
           ...prevNote,
-          imagess: updatedImagess,  // Update the images in the note
+          imagess: updatedImages,
         }));
       }
-  
-      // Fetch the project data from AsyncStorage
-      const projectData = await AsyncStorage.getItem(projectId); // Retrieve project data from storage
+
+      const projectData = await AsyncStorage.getItem(projectId);
       if (projectData) {
-        const parsedData = JSON.parse(projectData); // Parse the project data
-  
-        // Find the note in the project data
-        const noteIndex = parsedData.findIndex(n => n.Serial === serial);
-  
+        const parsedData = JSON.parse(projectData);
+        const noteIndex = parsedData.findIndex((n) => n.Serial === serial);
+
         if (noteIndex > -1) {
-          // Update the images in the note
-          parsedData[noteIndex].imagess = updatedImagess;
-         
-          // Save the updated project data to AsyncStorage
-          await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));  
-          console.log('Successfully saved updated project data to AsyncStorage.');
-    
-        } else {
-          console.error('Note not found in project data.');
+          parsedData[noteIndex].imagess = updatedImages;
+          await AsyncStorage.setItem(projectId, JSON.stringify(parsedData));
         }
-      } else {
-        console.error('Project data not found in AsyncStorage.');
       }
     } catch (error) {
       console.error('Error deleting image:', error);
     }
   };
 
-
   return (
     <SafeAreaView style={styles.container}>
       {showImage && selectedImage ? (
         <View style={styles.imagePreviewContainer}>
           <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} resizeMode="contain" />
-          <TouchableOpacity onPress={handleBackPress}>
+          <TouchableOpacity onPress={() => setShowImage(false)}>
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           <View style={styles.headerContainer}>
-            <TouchableOpacity 
-             onPress={() => {
-              navigation.navigate('CollectScreen' , {
-                 note,  // Pass the updated note
-                projectId,
-            });
-            }}
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('CollectScreen', {
+                  note,
+                  projectId,
+                  serial
+                });
+              }}
             >
               <Text style={styles.backText2}>{'\u2039'}</Text>
             </TouchableOpacity>
@@ -253,7 +203,7 @@ const HabitatPicture = ({ route }) => {
             data={imagess}
             keyExtractor={(item, index) => `${item.uri}-${index}`}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.noteEntry} onPress={() => handleImagePress(item)}>
+              <TouchableOpacity style={styles.noteEntry} onPress={() => setSelectedImage(item)}>
                 <View style={styles.iconContainer}>
                   <FontAwesome name="file-picture-o" size={34} color="black" />
                 </View>
@@ -273,14 +223,6 @@ const HabitatPicture = ({ route }) => {
           </TouchableOpacity>
         </>
       )}
-
-      <Dialog.Container visible={dialogVisibles}>
-        <Dialog.Title>Save Image</Dialog.Title>
-        <Dialog.Description>Enter a name for the photo you just captured:</Dialog.Description>
-        <Dialog.Input value={customImageNames} onChangeText={setCustomImageNames} placeholder="Image name" />
-        <Dialog.Button label="Cancel" onPress={() => setDialogVisibles(false)} />
-        <Dialog.Button label="Save" onPress={handleHabitatSaveImage} />
-      </Dialog.Container>
     </SafeAreaView>
   );
 };
@@ -363,6 +305,8 @@ const styles = StyleSheet.create({
 });
 
 export default HabitatPicture;
+
+
 
 
 

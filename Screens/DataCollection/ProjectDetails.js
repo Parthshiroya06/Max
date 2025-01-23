@@ -95,10 +95,12 @@ import React, { useState, useCallback } from 'react';
          projectId,
        });
      } else {
+      const formattedNoteSerial2 = parseInt(note.Serial.replace(/[^\d]/g, ''), 10);
        navigation.navigate('CollectScreen', {
          note,
          projectId,
          country: project.country,
+         noteSerial2: formattedNoteSerial2
        });
      }
    };
