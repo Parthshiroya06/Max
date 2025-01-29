@@ -21,14 +21,13 @@ import firestore from '@react-native-firebase/firestore';
 const { width, height } = Dimensions.get('window');
 
 const HabitatPicture = ({ route }) => {
-  const { projectId, serial, note: initialNote } = route.params;
+  const { projectId, serial, note: initialNote , projectName ,  noteSerial2 , localityNumber} = route.params;
   const [imagess, setImagess] = useState([]);
   const [showImage, setShowImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const navigation = useNavigation();
   const [note, setNote] = useState(initialNote || null);
 
-  const [localityNumber, setLocalityNumber] = useState('01');
   const [country, setCountryName] = useState(route.params?.country || 'AUS');
 
   useEffect(() => {
@@ -116,7 +115,7 @@ const HabitatPicture = ({ route }) => {
         const projectNumber = await getProjectNumber();
         const expedition = `E${projectNumber}`;
         const habitatCount = imagess.length + 1;
-        const generatedImageName = `${country.slice(0, 3).toUpperCase()}${year}${expedition}_L${localityNumber}_H${habitatCount}`;
+        const generatedImageName = `${projectName}_${ localityNumber}_H0${habitatCount}`;
   
         const newImage = {
           uri: asset.uri,

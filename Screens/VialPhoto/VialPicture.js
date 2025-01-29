@@ -24,7 +24,7 @@ import firestore from '@react-native-firebase/firestore';
 const {width, height} = Dimensions.get('window');
 
 const VialPicture = ({route}) => {
-  const {projectId, serial, note: initialNote} = route.params;
+  const {projectName , projectId, serial, note: initialNote , localityNumber} = route.params;
   const [note, setNote] = useState(initialNote || null);
   const [images, setImages] = useState([]);
   const [showImage, setShowImage] = useState(false);
@@ -141,15 +141,18 @@ const VialPicture = ({route}) => {
         const expedition = `E${projectNumber}`;
         console.log('Expedition:', expedition); // Log expedition value
   
-        const generatedImageName = (country, noteSerial, expedition) => {
-          const year = new Date().getFullYear().toString().slice(-2);
-          const serialNumber = noteSerial.replace(/\D/g, '').replace(/^0+/, '');
-          return `${country.slice(0, 3).toUpperCase()}${year}${expedition}_L${serialNumber}_vial`;
-        };
+        // const generatedImageName = (noteSerial) => {
+        //   //const year = new Date().getFullYear().toString().slice(-2);
+        //   const serialNumber = noteSerial.replace(/\D/g, '').replace(/^0+/, '');
+        //   const photoNumber = images.length + 1;
+        //   return `${projectName}_L0${localityNumber}_V0${photoNumber}`;
+        // };
+        const vialCount = images.length + 1;
+        const generatedImageName = `${projectName}_${ localityNumber}_V0${vialCount}`;
   
         const newImage = {
           uri: asset.uri,
-          name: generatedImageName(country, serial, expedition),
+          name: generatedImageName,
           sizeMB: sizeInMB,
         };
   
