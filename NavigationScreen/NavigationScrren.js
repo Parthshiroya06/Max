@@ -19,6 +19,8 @@ import HomeScreen from '../Screens/Home/HomeScreen';
 import LoginScreen from '../Screens/User/LoginScreen';
 import SignUpScreen from '../Screens/User/SignUpScreen';
 import ProfileScreen from '../Screens/ProfileScreens/ProfileScreens';
+import UploadSetupScreen from '../Screens/ProjectSetup/UploadSetupScreen';
+import MangerView from '../Screens/UploadedDataCollection/MangerView';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -40,6 +42,7 @@ const SetupStack = () => (
     <Stack.Screen name="SetupScreen" component={SetupScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="UploadSetupScreen" component={UploadSetupScreen} options={{ headerShown: false }}/>
   </Stack.Navigator>
 );
 

@@ -342,24 +342,20 @@ const SetupScreen = () => {
           .collection('UserInformation')
           .doc(user.email)
           .collection('Project Created');
-
+  
         const snapshot = await userProjectsRef.get();
         if (snapshot.empty) {
           throw new Error('No projects found in Firebase');
         }
-
+  
         const firebaseProjects = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
+          isUploaded: true, // Always setting isUploaded to true
         }));
-
-        const projectsWithStatus = firebaseProjects.map(project => ({
-          ...project,
-          isUploaded: getProjectStatus(project.id),
-        }));
-        setProjects(projectsWithStatus);
-
-        await AsyncStorage.setItem('projects', JSON.stringify(projectsWithStatus));
+  
+        setProjects(firebaseProjects);
+        await AsyncStorage.setItem('projects', JSON.stringify(firebaseProjects));
       } else {
         throw new Error('User is not logged in');
       }
@@ -370,24 +366,23 @@ const SetupScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [getProjectStatus]);
-
-  // Load projects from AsyncStorage
+  }, []);
+  
   const loadProjectsFromAsyncStorage = async () => {
     try {
       const storedProjects = await AsyncStorage.getItem('projects');
       if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects);
-        const projectsWithStatus = parsedProjects.map(project => ({
+        const parsedProjects = JSON.parse(storedProjects).map(project => ({
           ...project,
-          isUploaded: getProjectStatus(project.id),
+          isUploaded: true, // Always setting isUploaded to true
         }));
-        setProjects(projectsWithStatus);
+        setProjects(parsedProjects);
       }
     } catch (error) {
       console.error('Error loading projects from AsyncStorage:', error);
     }
   };
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -406,7 +401,7 @@ const SetupScreen = () => {
       style={[styles.projectItem, !item.isUploaded && styles.disabled]}
       onPress={
         item.isUploaded
-          ? () => navigation.navigate('ProjectDetails', { projectId: item.id })
+          ? () => navigation.navigate('UploadSetupScreen', { projectId: item.id })
           : null
       }>
       <View style={styles.projectDetails}>

@@ -9,7 +9,7 @@
   
 //  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
  
-//  const ProjectDetails = () => {
+//  const UploadSetupScreen  = () => {
 //    const navigation = useNavigation();
 //    const route = useRoute();
 //    const { projects, updateProjectUploadStatus, uploadedNotes, setUploadedNotes } = useUploadStatus();
@@ -38,6 +38,7 @@
 //             return;
 //         }
 
+//         // Fetch project details
 //         const projectRef = firestore()
 //             .collection('UserInformation')
 //             .doc(userEmail)
@@ -45,19 +46,33 @@
 //             .doc(projectId);
 
 //         const projectDoc = await projectRef.get();
-//         if (projectDoc.exists) {
-//             const projectData = projectDoc.data();
-//             console.log('Fetched project data:', projectData);
-//             setProject(projectData);
-//         } else {
+
+//         if (!projectDoc.exists) {
 //             console.error('Project not found in Firestore for the given ID.');
+//             return;
 //         }
 
+//         const projectData = projectDoc.data();  // Ensure this is only accessed if projectDoc.exists
+//         console.log('Fetched project data:', projectData);
+//         setProject(projectData);
+
+//         // Ensure projectData has projectName before accessing it
+//         if (!projectData?.projectName) {
+//             console.error('projectName is missing in Firestore document.');
+//             return;
+//         }
+
+//         const projectName = projectData.projectName;
+//         console.log('Project Name:', projectName);
+
 //         // Fetch notes from Firestore
-//         const notesSnapshot = await projectRef.collection('Uploaded Note').get();
+//         const notesDocRef = firestore().collection('NotesUploaded').doc(projectName);
+//         const notesDoc = await notesDocRef.get();
 //         let firestoreNotes = [];
-//         if (!notesSnapshot.empty) {
-//             firestoreNotes = notesSnapshot.docs.map(doc => doc.data());
+
+//         if (notesDoc.exists) {
+//             const data = notesDoc.data();
+//             firestoreNotes = data?.notes || []; // Ensure data.notes is present
 //             console.log('Fetched notes from Firestore:', firestoreNotes);
 //         } else {
 //             console.log('No notes found in Firestore.');
@@ -68,15 +83,15 @@
 //         let asyncStorageNotes = storedNotes ? JSON.parse(storedNotes) : [];
 //         console.log('Fetched notes from AsyncStorage:', asyncStorageNotes);
 
-//         // Ensure new notes have `isUploaded: false`
+//         // Ensure all notes have `isUploaded: false` if not present
 //         const allNotes = [...firestoreNotes, ...asyncStorageNotes].map(note => ({
 //             ...note,
-//             isUploaded: note.isUploaded || false,  // Ensure unuploaded notes are marked correctly
+//             isUploaded: note.isUploaded ?? false, // Ensure `isUploaded` is set correctly
 //         }));
 
-//         // Filter unique notes
+//         // Filter unique notes using Serial as a unique key
 //         const uniqueNotes = allNotes.filter((note, index, self) =>
-//             index === self.findIndex((n) => n.id === note.id)
+//             index === self.findIndex((n) => n.Serial === note.Serial)
 //         );
 
 //         console.log('Unique notes:', uniqueNotes);
@@ -91,11 +106,6 @@
 //     }
 // };
 
-  
-   
-
-  
- 
 //    // Reload project details whenever the screen comes into focus
 //    useFocusEffect(
 //      useCallback(() => {
@@ -124,84 +134,6 @@
 //        });
 //      }
 //    };
- 
-//    const handleAddNotesPress = async () => {
-//     const { projectName } = project;
-//     const noteSerial = uploadedNotes.length + 1;
-
-//     // Navigate to CollectScreen to add the note
-//     navigation.navigate('CollectScreen', {
-//         projectId,
-//         noteSerial,
-//         country: project.country,
-//         projectName
-//     });
-
-//     // Reload project details after navigating back
-//     setTimeout(() => {
-//         loadProjectDetails();
-//     }, 1000);  // Delay to allow note creation
-// };
-
-// const handleUploadNotesPress = async () => {
-//   const userEmail = getUserEmail();
-//   if (!userEmail) {
-//       console.error('No logged-in user email found.');
-//       return;
-//   }
-
-//   try {
-//       console.log('Uploading notes...');
-      
-//       // Separate unuploaded notes
-//       const unuploadedNotes = uploadedNotes.filter(note => !note.isUploaded);
-
-//       if (unuploadedNotes.length === 0) {
-//           console.log('All notes are already uploaded.');
-//           return;
-//       }
-
-//       // Firestore batch update
-//       const projectRef = firestore()
-//           .collection('UserInformation')
-//           .doc(userEmail)
-//           .collection('Allocated Project')
-//           .doc(projectId);
-      
-//       const batch = firestore().batch();
-//       unuploadedNotes.forEach(note => {
-//           const noteRef = projectRef.collection('Uploaded Note').doc(note.Serial.toString());
-//           batch.set(noteRef, { ...note, isUploaded: true });
-//       });
-
-//       await batch.commit();
-//       console.log('Notes uploaded successfully.');
-
-//       // Update project as uploaded if **all** notes are uploaded
-//       const allNotesUploaded = uploadedNotes.every(note => note.isUploaded || unuploadedNotes.includes(note));
-//       if (allNotesUploaded) {
-//           await projectRef.update({ isUploaded: true });
-//           updateProjectUploadStatus(projectId, true);
-//       }
-
-//       // Update only uploaded notes, keeping new ones unchanged
-//       const updatedNotes = uploadedNotes.map(note => 
-//           unuploadedNotes.some(unNote => unNote.Serial === note.Serial) 
-//               ? { ...note, isUploaded: true } 
-//               : note
-//       );
-
-//       setUploadedNotes(updatedNotes);
-//       await AsyncStorage.setItem(projectId, JSON.stringify(updatedNotes));
-
-//       console.log('AsyncStorage updated with uploaded notes.');
-
-//   } catch (error) {
-//       console.error('Error uploading notes:', error);
-//   }
-// };
-
-   
  
 //    const formatDate = dateString => {
 //      const date = new Date(dateString);
@@ -281,22 +213,10 @@
 //          ) : (
 //            <>
 //              <Text style={styles.noNotesMessage}>No field notes available.</Text>
-//              <Text style={styles.noNotesSubtext}>Create your first note to get started!</Text>
+            
 //            </>
 //          )}
 //        </View>
- 
-//        <View style={styles.buttonContainer}>
-//   <TouchableOpacity
-//     style={styles.uploadButton}
-//     onPress={handleUploadNotesPress}>
-//     <Text style={styles.uploadButtonText}>Upload</Text>
-//   </TouchableOpacity>
-
-//   <TouchableOpacity style={styles.addButton2} onPress={handleAddNotesPress}>
-//     <Text style={styles.addButtonText2}>Add Notes</Text>
-//   </TouchableOpacity>
-// </View>
 
 //      </ScrollView>
 //    );
@@ -485,11 +405,7 @@
 //    },
 //  });
  
-//  export default ProjectDetails;
-
-
-
-
+//  export default UploadSetupScreen;
 
 
 
@@ -507,7 +423,7 @@ import React, { useState, useCallback } from 'react';
   
  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
  
- const ProjectDetails = () => {
+ const UploadSetupScreen  = () => {
    const navigation = useNavigation();
    const route = useRoute();
    const { projects, updateProjectUploadStatus, uploadedNotes, setUploadedNotes } = useUploadStatus();
@@ -529,71 +445,62 @@ import React, { useState, useCallback } from 'react';
 
    const loadProjectDetails = async () => {
     try {
-        console.log('Loading project details...');
-        const userEmail = getUserEmail();
-        if (!userEmail) {
-            console.error('No logged-in user email found.');
-            return;
-        }
-
-        const projectRef = firestore()
-            .collection('UserInformation')
-            .doc(userEmail)
-            .collection('Allocated Project')
-            .doc(projectId);
-
-        const projectDoc = await projectRef.get();
-        if (projectDoc.exists) {
-            const projectData = projectDoc.data();
-            console.log('Fetched project data:', projectData);
-            setProject(projectData);
-        } else {
-            console.error('Project not found in Firestore for the given ID.');
-        }
-
-        // Fetch notes from Firestore
-        const notesSnapshot = await projectRef.collection('Uploaded Note').get();
-        let firestoreNotes = [];
-        if (!notesSnapshot.empty) {
-            firestoreNotes = notesSnapshot.docs.map(doc => doc.data());
-            console.log('Fetched notes from Firestore:', firestoreNotes);
-        } else {
-            console.log('No notes found in Firestore.');
-        }
-
-        // Fetch notes from AsyncStorage
-        const storedNotes = await AsyncStorage.getItem(projectId);
-        let asyncStorageNotes = storedNotes ? JSON.parse(storedNotes) : [];
-        console.log('Fetched notes from AsyncStorage:', asyncStorageNotes);
-
-        // Ensure new notes have `isUploaded: false`
-        const allNotes = [...firestoreNotes, ...asyncStorageNotes].map(note => ({
-            ...note,
-            isUploaded: note.isUploaded || false,  // Ensure unuploaded notes are marked correctly
-        }));
-
-        // Filter unique notes
-        const uniqueNotes = allNotes.filter((note, index, self) =>
-            index === self.findIndex((n) => n.id === note.id)
-        );
-
-        console.log('Unique notes:', uniqueNotes);
-
-        // Set state
-        setUploadedNotes(uniqueNotes);
-        await AsyncStorage.setItem(projectId, JSON.stringify(uniqueNotes));
-        console.log('Unique notes synced with AsyncStorage.');
-
+      console.log('Loading project details...');
+      const userEmail = getUserEmail();
+      if (!userEmail) {
+        console.error('No logged-in user email found.');
+        return;
+      }
+  
+      // Fetch project details
+      const projectRef = firestore()
+        .collection('UserInformation')
+        .doc(userEmail)
+        .collection('Allocated Project')
+        .doc(projectId);
+  
+      const projectDoc = await projectRef.get();
+  
+      if (!projectDoc.exists) {
+        console.error('Project not found in Firestore for the given ID.');
+        return;
+      }
+  
+      const projectData = projectDoc.data();  // Ensure this is only accessed if projectDoc.exists
+      console.log('Fetched project data:', projectData);
+      setProject(projectData);
+  
+      // Ensure projectData has projectName before accessing it
+      if (!projectData?.projectName) {
+        console.error('projectName is missing in Firestore document.');
+        return;
+      }
+  
+      const projectName = projectData.projectName;
+      console.log('Project Name:', projectName);
+  
+      // Fetch notes from Firestore
+      const notesDocRef = firestore().collection('NotesUploaded').doc(projectName);
+      const notesDoc = await notesDocRef.get();
+      let firestoreNotes = [];
+  
+      if (notesDoc.exists) {
+        const data = notesDoc.data();
+        firestoreNotes = data?.notes || []; // Ensure data.notes is present
+        console.log('Fetched all notes from Firestore:', firestoreNotes);
+      } else {
+        console.log('No notes found in Firestore.');
+      }
+  
+      // Set state with all the Firestore notes
+      setUploadedNotes(firestoreNotes);
+  
     } catch (error) {
-        console.error('Error loading project details:', error);
+      console.error('Error loading project details:', error);
     }
-};
-
+  };
   
-   
 
-  
- 
    // Reload project details whenever the screen comes into focus
    useFocusEffect(
      useCallback(() => {
@@ -622,107 +529,6 @@ import React, { useState, useCallback } from 'react';
        });
      }
    };
- 
-   const handleAddNotesPress = async () => {
-    const { projectName } = project;
-    const noteSerial = uploadedNotes.length + 1;
-
-    // Navigate to CollectScreen to add the note
-    navigation.navigate('CollectScreen', {
-        projectId,
-        noteSerial,
-        country: project.country,
-        projectName
-    });
-
-    // Reload project details after navigating back
-    setTimeout(() => {
-        loadProjectDetails();
-    }, 1000);  // Delay to allow note creation
-};
-
-const handleUploadNotesPress = async () => {
-  const userEmail = getUserEmail();
-  if (!userEmail) {
-    console.error('No logged-in user email found.');
-    return;
-  }
-
-  try {
-    console.log('Uploading notes...');
-
-    // Separate unuploaded notes
-    const unuploadedNotes = uploadedNotes.filter(note => !note.isUploaded);
-    if (unuploadedNotes.length === 0) {
-      console.log('All notes are already uploaded.');
-      return;
-    }
-
-    // Firestore batch update for user's allocated project
-    const projectRef = firestore()
-      .collection('UserInformation')
-      .doc(userEmail)
-      .collection('Allocated Project')
-      .doc(projectId);
-
-    const batch = firestore().batch();
-    unuploadedNotes.forEach(note => {
-      const noteRef = projectRef.collection('Uploaded Note').doc(note.Serial.toString());
-      batch.set(noteRef, { ...note, isUploaded: true });
-    });
-
-    await batch.commit();
-    console.log('Notes uploaded successfully.');
-
-    // Upload to `NotesUploaded` collection
-    const notesUploadedRef = firestore().collection('NotesUploaded').doc(project.projectName);
-    const existingProjectDoc = await notesUploadedRef.get();
-
-    if (existingProjectDoc.exists) {
-      console.log('Project already exists in NotesUploaded, appending notes...');
-      const existingNotes = existingProjectDoc.data().notes || [];
-      const updatedNotes = [...existingNotes, ...unuploadedNotes.map(note => ({
-        ...note,
-        isUploaded: true
-      }))];
-
-      await notesUploadedRef.update({ notes: updatedNotes });
-    } else {
-      console.log('Project does not exist in NotesUploaded, creating new document...');
-      await notesUploadedRef.set({
-        projectName: project.projectName,
-        notes: unuploadedNotes.map(note => ({
-          ...note,
-          isUploaded: true
-        }))
-      });
-    }
-
-    // Update project as uploaded if all notes are uploaded
-    const allNotesUploaded = uploadedNotes.every(note => note.isUploaded || unuploadedNotes.includes(note));
-    if (allNotesUploaded) {
-      await projectRef.update({ isUploaded: true });
-      updateProjectUploadStatus(projectId, true);
-    }
-
-    // Update only uploaded notes, keeping new ones unchanged
-    const updatedNotes = uploadedNotes.map(note =>
-      unuploadedNotes.some(unNote => unNote.Serial === note.Serial)
-        ? { ...note, isUploaded: true }
-        : note
-    );
-
-    setUploadedNotes(updatedNotes);
-    await AsyncStorage.setItem(projectId, JSON.stringify(updatedNotes));
-
-    console.log('AsyncStorage updated with uploaded notes.');
-  } catch (error) {
-    console.error('Error uploading notes:', error);
-  }
-};
-
-
-   
  
    const formatDate = dateString => {
      const date = new Date(dateString);
@@ -802,22 +608,10 @@ const handleUploadNotesPress = async () => {
          ) : (
            <>
              <Text style={styles.noNotesMessage}>No field notes available.</Text>
-             <Text style={styles.noNotesSubtext}>Create your first note to get started!</Text>
+            
            </>
          )}
        </View>
- 
-       <View style={styles.buttonContainer}>
-  <TouchableOpacity
-    style={styles.uploadButton}
-    onPress={handleUploadNotesPress}>
-    <Text style={styles.uploadButtonText}>Upload</Text>
-  </TouchableOpacity>
-
-  <TouchableOpacity style={styles.addButton2} onPress={handleAddNotesPress}>
-    <Text style={styles.addButtonText2}>Add Notes</Text>
-  </TouchableOpacity>
-</View>
 
      </ScrollView>
    );
@@ -832,6 +626,7 @@ const handleUploadNotesPress = async () => {
      fontSize: screenWidth * 0.06,
      fontWeight: 'bold',
      color: 'black',
+     marginLeft: screenWidth * 0.09,
    },
    locationSection: {
      marginBottom: screenHeight * 0.015,
@@ -1006,7 +801,7 @@ const handleUploadNotesPress = async () => {
    },
  });
  
- export default ProjectDetails;
+ export default UploadSetupScreen;
 
 
 
