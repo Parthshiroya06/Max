@@ -509,12 +509,14 @@ import React, { useState, useCallback } from 'react';
    );
  
    const handleNotePress = note => {
-    const { projectName } = project;
+    const { projectName , createdBy} = project;
      if (project.isUploaded) {
-       navigation.navigate('UploadedNoteScreen', {
+       navigation.navigate('MangerView', {
          note,
          noteSerial: note.Serial,
          projectId,
+         projectName,
+         createdBy
        });
      } else {
      // const formattedNoteSerial2 = parseInt(note.Serial.replace(/[^\d]/g, ''), 10);

@@ -43,6 +43,8 @@ const SetupStack = () => (
     <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="SetupScreen2" component={SetupScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="UploadSetupScreen" component={UploadSetupScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="MangerView" component={MangerView} options={{ headerShown: false }}/>
+    <Stack.Screen name="Home2" component={HomeScreen} options={{ headerShown: false }}/>
   </Stack.Navigator>
 );
 

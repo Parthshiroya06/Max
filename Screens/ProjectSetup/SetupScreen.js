@@ -418,7 +418,7 @@ const SetupScreen = () => {
       </View>
       <View style={styles.iconContainer}>
         {item.isUploaded ? (
-          <Icon name="cloud-done" size={28} color="black" />
+          <Icon name="cloud-done" size={28} color="black" style={{ marginBottom: 35 }} />
         ) : (
           <Icon name="pending-actions" size={28} color="black" style={{ marginBottom: 35 }} />
         )}
@@ -433,21 +433,51 @@ const SetupScreen = () => {
     try {
       const user = auth().currentUser;
       if (user && user.email) {
-        await firestore()
-          .collection('UserInformation')
-          .doc(user.email)
-          .collection('Project Created')
-          .doc(projectId)
-          .delete();
+        const userEmail = user.email;
   
+        const userRef = firestore().collection('UserInformation').doc(userEmail);
+  
+        // 1. Delete from "Project Created" (Owner's list)
+        await userRef.collection('Project Created').doc(projectId).delete();
+  
+        // 2. Delete from "Allocated Project" (Owner's list)
+        await userRef.collection('Allocated Project').doc(projectId).delete();
+  
+        // 3. Find all users (teammates) and delete from their "Allocated Project"
+        const allUsersSnapshot = await firestore().collection('UserInformation').get();
+  
+        const deletePromises = allUsersSnapshot.docs.map(async (doc) => {
+          const teammateEmail = doc.id; // Email ID of the user (document ID)
+  
+          // Skip the owner, since we already deleted from their Allocated Project
+          if (teammateEmail === userEmail) return;
+  
+          const allocatedProjectRef = firestore()
+            .collection('UserInformation')
+            .doc(teammateEmail)
+            .collection('Allocated Project')
+            .doc(projectId);
+  
+          const allocatedProjectDoc = await allocatedProjectRef.get();
+          if (allocatedProjectDoc.exists) {
+            await allocatedProjectRef.delete();
+          }
+        });
+  
+        await Promise.all(deletePromises);
+  
+        // 4. Update local state & AsyncStorage
         const updatedProjects = projects.filter(project => project.id !== projectId);
         setProjects(updatedProjects);
         await AsyncStorage.setItem('projects', JSON.stringify(updatedProjects));
+  
+        console.log(`Project ${projectId} successfully deleted from all users' allocated projects.`);
       }
     } catch (error) {
       console.error('Error deleting project:', error);
     }
   };
+  
   
   
 
@@ -467,10 +497,7 @@ const SetupScreen = () => {
           <ActivityIndicator size="large" color="black" />
         ) : error ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={loadProjects} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyComponent}>No projects available</Text>
           </View>
         ) : (
           <FlatList
@@ -602,8 +629,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: height * 0.3,
   },
   errorText: {
     fontSize: 18,
