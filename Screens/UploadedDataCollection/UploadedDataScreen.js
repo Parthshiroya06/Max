@@ -186,6 +186,7 @@ const UploadedData = ({route}) => {
             const projectId = route.params?.projectId;
 
             console.log('projectIdcgh:', projectId);
+
             const noteNumber = route.params?.note
               ? route.params.note.Serial // If editing, keep the same Serial
               : `Note 0${notes.length + 1}`; // New note gets the next number
