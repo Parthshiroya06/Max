@@ -260,7 +260,7 @@ const UploadedData = ({route}) => {
           <Text style={styles.value}>{data.conductivity || 'N/A'} µS/cm</Text>
         </Text>
         <Text style={styles.label}>
-          Turbidity :{' '}
+          Turbidity :
           <Text style={styles.value}>{data.turbidity || 'N/A'} FNU</Text>
         </Text>
         <Text style={styles.label}>
@@ -273,7 +273,7 @@ const UploadedData = ({route}) => {
           pH : <Text style={styles.value}>{data.pH || 'N/A'}</Text>
         </Text>
         <Text style={styles.label}>
-          Additional Notes :{' '}
+          Additional Notes :
           <Text style={styles.value}>{data.additional || 'None'}</Text>
         </Text>
       </View>
