@@ -257,6 +257,18 @@ const UploadedData = ({route}) => {
           <Text style={styles.value}>{data.temperature || 'N/A'} °C</Text>
         </Text>
         <Text style={styles.label}>
+          Conductivity :{' '}
+          <Text style={styles.value}>{data.conductivity || 'N/A'} µS/cm</Text>
+        </Text>
+        <Text style={styles.label}>
+          Turbidity :{' '}
+          <Text style={styles.value}>{data.turbidity || 'N/A'} FNU</Text>
+        </Text>
+        <Text style={styles.label}>
+          O2dis :{' '}
+          <Text style={styles.value}>{data.o2dis  || 'N/A'} %</Text>
+        </Text>
+        <Text style={styles.label}>
           Hardness : <Text style={styles.value}>{data.hardness || 'N/A'}</Text>
         </Text>
         <Text style={styles.label}>

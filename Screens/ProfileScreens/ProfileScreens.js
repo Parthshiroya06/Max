@@ -128,89 +128,121 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 15,
+    backgroundColor: '#F4F6F9', // Slightly lighter gray for a cleaner look
+    padding: 30,
+    //justifyContent: 'center',
   },
   topSection: {
     alignItems: 'center',
-    marginTop: height * 0.01,
+    marginTop: height * 0.02, // Adjusted to shift the top section up
+    marginBottom: height * 0.02, // Reduced margin-bottom to bring it up
   },
   profilePicture: {
     width: width * 0.4,
     height: width * 0.4,
     borderRadius: (width * 0.4) / 2,
-    borderWidth: 2,
-    borderColor: 'black',
-    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: 'white',
+    backgroundColor: '#E1E1E1', // Fallback color in case of missing image
+    marginBottom: 15, // Reduced margin-bottom for closer alignment
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    transform: [{ scale: 1 }],
+    transition: 'transform 0.3s ease',
+  },
+  profilePictureHovered: {
+    transform: [{ scale: 1.05 }],
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '600',
     color: '#333',
-    marginTop: 0,
-  },
-  phoneSection: {
-    marginTop: 30, // Increase space between name and phone section
+    marginTop: height * 0.02, // Adjusted margin-top to move the name up
+    marginBottom: 5, // Reduced margin-bottom
   },
   infoSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 10, // Reduced vertical margin to bring sections closer
     paddingHorizontal: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   icon: {
-    marginRight: 15,
+    marginRight: 20,
   },
   phoneText: {
-    fontSize: 16,
-    color: 'black',
+    fontSize: 18,
+    color: '#555',
+    fontWeight: '500',
   },
   institutionText: {
-    fontSize: 16,
-    color: 'black',
+    fontSize: 18,
+    color: '#555',
+    fontWeight: '500',
   },
   separator: {
-    height: 2,
-    backgroundColor: 'black',
-    marginLeft: 50
+    height: 3,
+    backgroundColor: '#D3D3D3',
+    fontWeight: "bold",
+    marginLeft: 6,
+    marginVertical: 8, // Reduced vertical margin for a tighter layout
   },
   logoutButton: {
     position: 'absolute',
-    bottom: 80,
-    left: 60,
-    right: 60,
-    backgroundColor: 'black',
-    paddingVertical: 15,
-    borderRadius: 10,
+    bottom: 80, // Raised logout button
+    left: 40,
+    right: 40,
+    backgroundColor: '#A0B6B0',
+    paddingVertical: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
   logoutText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: '600',
+    color: 'black',
   },
   deleteButton: {
     position: 'absolute',
-    bottom: 30,
-    left: 60,
-    right: 60,
-    backgroundColor: 'black',
-    paddingVertical: 15,
-    borderRadius: 10,
+    bottom: 10, // Raised delete button
+    left: 40,
+    right: 40,
+    backgroundColor: '#FF3B30',
+    paddingVertical: 18,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
   deleteText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: 'white',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F4F6F9',
   },
 });
+
 
 export default ProfileScreen;

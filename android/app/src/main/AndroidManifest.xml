@@ -21,6 +21,10 @@
      <meta-data
     android:name="com.google.android.geo.API_KEY"
     android:value="AIzaSyAG71oZoh5EI4bfro8Kct2wySMflLwOR6k"/>
+
+    <meta-data android:name="com.mapbox.token" 
+    android:value="pk.eyJ1IjoiYW5raXQ4MzYiLCJhIjoiY202dnV2dTJ2MGcwazJpczg5M3FyYmhwOCJ9.OToOdFg7n-0XKb6tA8BWdw" />
+
       
       
       <activity

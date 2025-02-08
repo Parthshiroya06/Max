@@ -456,7 +456,7 @@ import React, { useState, useCallback } from 'react';
       const projectRef = firestore()
         .collection('UserInformation')
         .doc(userEmail)
-        .collection('Allocated Project')
+        .collection('Project Created')
         .doc(projectId);
   
       const projectDoc = await projectRef.get();
@@ -522,12 +522,16 @@ import React, { useState, useCallback } from 'react';
      // const formattedNoteSerial2 = parseInt(note.Serial.replace(/[^\d]/g, ''), 10);
      const formattedNoteSerial2 = note.Serial.replace(/[^\d]/g, '').slice(-1);
       console.log('serial2:',formattedNoteSerial2)
-       navigation.navigate('CollectScreen', {
+       navigation.navigate('MangerView', {
          note,
+         //projectId,
+         //country: project.country,
+         //noteSerial2: formattedNoteSerial2,
+         noteSerial: note.Serial,
          projectId,
-         country: project.country,
-         noteSerial2: formattedNoteSerial2,
-         projectName
+         projectName,
+         createdBy
+         //projectName
        });
      }
    };

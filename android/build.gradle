@@ -10,12 +10,27 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
+        maven { url("$rootDir/../node_modules/react-native/android") } // Ensure React Native dependencies are resolved
+         maven { url 'https://api.mapbox.com/downloads/v2/releases/maven' }
+        maven { url 'https://mapbox.bintray.com/mapbox' }
+
     }
+
+
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
         classpath ('com.google.gms:google-services:4.3.15')
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://api.mapbox.com/downloads/v2/releases/maven' }
     }
 }
 
