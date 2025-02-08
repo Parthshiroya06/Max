@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,23 +13,32 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { launchCamera } from 'react-native-image-picker';
+import {useNavigation} from '@react-navigation/native';
+import {launchCamera} from 'react-native-image-picker';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
-const HabitatPicture = ({ route }) => {
-  const { projectId, serial, note: initialNote , projectName ,  noteSerial2 , localityNumber} = route.params;
-  const [imagess, setImagess] = useState([]);
+const HabitatPicture = ({route}) => {
+  const {
+    projectId,
+    serial,
+    note: initialNote,
+    projectName,
+    noteSerial2,
+    localityNumber,
+    imageList,
+    goBack,
+  } = route.params;
+  const [imagess, setImagess] = useState(imageList);
   const [showImage, setShowImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const navigation = useNavigation();
   const [note, setNote] = useState(initialNote || null);
 
   const [country, setCountryName] = useState(route.params?.country || 'AUS');
-
+  console.log('sdfsdfsdF>>>>>');
   useEffect(() => {
     console.log('Country:', country);
     const fetchImageData = async () => {
@@ -37,10 +46,14 @@ const HabitatPicture = ({ route }) => {
         const projectData = await AsyncStorage.getItem(projectId);
         if (projectData) {
           const parsedData = JSON.parse(projectData);
-          const fetchedNote = parsedData.find((n) => n.Serial === serial);
+          const fetchedNote = parsedData.find(n => n.Serial === serial);
           if (fetchedNote) {
             setNote(fetchedNote);
-            setImagess(fetchedNote.imagess || []);
+            // setImagess(fetchedNote.imagess || []);
+            setImagess(prevImages => [
+              ...prevImages,
+              ...(fetchedNote.images || []),
+            ]);
           } else {
             console.error('Note not found for serial:', serial);
           }
@@ -55,12 +68,12 @@ const HabitatPicture = ({ route }) => {
     }
   }, [projectId, serial, initialNote]);
 
-  const saveImagesToStorage = async (updatedImages) => {
+  const saveImagesToStorage = async updatedImages => {
     try {
       const projectData = await AsyncStorage.getItem(projectId);
       if (projectData) {
         const parsedData = JSON.parse(projectData);
-        const noteIndex = parsedData.findIndex((n) => n.Serial === serial);
+        const noteIndex = parsedData.findIndex(n => n.Serial === serial);
 
         if (noteIndex !== -1) {
           parsedData[noteIndex].imagess = updatedImages;
@@ -99,7 +112,7 @@ const HabitatPicture = ({ route }) => {
       cameraType: 'back',
       quality: 1,
     };
-  
+
     try {
       const result = await launchCamera(options);
       if (result.didCancel) {
@@ -110,22 +123,23 @@ const HabitatPicture = ({ route }) => {
       } else if (result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         const sizeInMB = (asset.fileSize / (1024 * 1024)).toFixed(2);
-  
+
         const year = new Date().getFullYear().toString().slice(-2);
         const projectNumber = await getProjectNumber();
+        console.log('Sdfsfsdfsdf>>>>', projectNumber);
         const expedition = `E${projectNumber}`;
         const habitatCount = imagess.length + 1;
-        const generatedImageName = `${projectName}_${ localityNumber}_H0${habitatCount}`;
-  
+        const generatedImageName = `${projectName}_${localityNumber}_H0${habitatCount}`;
+
         const newImage = {
           uri: asset.uri,
           name: generatedImageName,
           sizeMB: sizeInMB,
         };
-  
+
         const newImagesList = [...imagess, newImage];
         setImagess(newImagesList);
-  
+        goBack(newImagesList);
         // Update the note state as well
         if (note) {
           const updatedNote = {
@@ -134,9 +148,9 @@ const HabitatPicture = ({ route }) => {
           };
           setNote(updatedNote); // Ensure the note state is updated as well
         }
-  
+
         console.log('Image saved with name:', generatedImageName);
-  
+
         // Save images and note to AsyncStorage
         await saveImagesToStorage(newImagesList);
       }
@@ -145,14 +159,14 @@ const HabitatPicture = ({ route }) => {
       Alert.alert('Error', 'Failed to open camera');
     }
   };
-  
-  const handleDeleteImage = async (imageUri) => {
-    try {
-      const updatedImages = imagess.filter((image) => image.uri !== imageUri);
-      setImagess(updatedImages);
 
+  const handleDeleteImage = async imageUri => {
+    try {
+      const updatedImages = imagess.filter(image => image.uri !== imageUri);
+      setImagess(updatedImages);
+      goBack(updatedImages);
       if (note) {
-        setNote((prevNote) => ({
+        setNote(prevNote => ({
           ...prevNote,
           imagess: updatedImages,
         }));
@@ -161,7 +175,7 @@ const HabitatPicture = ({ route }) => {
       const projectData = await AsyncStorage.getItem(projectId);
       if (projectData) {
         const parsedData = JSON.parse(projectData);
-        const noteIndex = parsedData.findIndex((n) => n.Serial === serial);
+        const noteIndex = parsedData.findIndex(n => n.Serial === serial);
 
         if (noteIndex > -1) {
           parsedData[noteIndex].imagess = updatedImages;
@@ -177,7 +191,11 @@ const HabitatPicture = ({ route }) => {
     <SafeAreaView style={styles.container}>
       {showImage && selectedImage ? (
         <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} resizeMode="contain" />
+          <Image
+            source={{uri: selectedImage.uri}}
+            style={styles.imagePreview}
+            resizeMode="contain"
+          />
           <TouchableOpacity onPress={() => setShowImage(false)}>
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -190,10 +208,9 @@ const HabitatPicture = ({ route }) => {
                 navigation.navigate('CollectScreen', {
                   note,
                   projectId,
-                  serial
+                  serial,
                 });
-              }}
-            >
+              }}>
               <Text style={styles.backText2}>{'\u2039'}</Text>
             </TouchableOpacity>
             <Text style={styles.header}>Habitat Picture</Text>
@@ -201,22 +218,30 @@ const HabitatPicture = ({ route }) => {
           <FlatList
             data={imagess}
             keyExtractor={(item, index) => `${item.uri}-${index}`}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.noteEntry} onPress={() => setSelectedImage(item)}>
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={styles.noteEntry}
+                onPress={() => setSelectedImage(item)}>
                 <View style={styles.iconContainer}>
                   <FontAwesome name="file-picture-o" size={34} color="black" />
                 </View>
                 <View style={styles.noteInfo}>
-                  <Text style={styles.imageName}>{item.name || 'Unnamed'}.jpeg</Text>
+                  <Text style={styles.imageName}>
+                    {item.name || 'Unnamed'}.jpeg
+                  </Text>
                   <Text style={styles.imageSize}>{item.sizeMB || '0'}MB</Text>
                 </View>
-                <TouchableOpacity style={styles.iconContainer2} onPress={() => handleDeleteImage(item.uri)}>
+                <TouchableOpacity
+                  style={styles.iconContainer2}
+                  onPress={() => handleDeleteImage(item.uri)}>
                   <Icon name="delete" size={32} color="black" />
                 </TouchableOpacity>
               </TouchableOpacity>
             )}
           />
-          <TouchableOpacity style={styles.captureButton} onPress={openCameraHabitat}>
+          <TouchableOpacity
+            style={styles.captureButton}
+            onPress={openCameraHabitat}>
             <FontAwesome name="camera" size={20} color="black" />
             <Text style={styles.captureButtonText}>Capture</Text>
           </TouchableOpacity>
@@ -239,8 +264,8 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   headerContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: width * 0.03,
     marginBottom: height * 0.03,
     marginLeft: width * 0.05,
@@ -270,7 +295,7 @@ const styles = StyleSheet.create({
   },
   noteInfo: {
     justifyContent: 'center',
-    flex: 1, 
+    flex: 1,
   },
   imageName: {
     fontSize: width * 0.04,
@@ -282,8 +307,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   imagePreview: {
-    width: width * 0.99, 
-    height: height * 0.65, 
+    width: width * 0.99,
+    height: height * 0.65,
     borderWidth: 3,
     borderColor: 'black',
     marginTop: height * 0.15,
@@ -295,27 +320,12 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: width * 0.05,
     color: 'black',
-    fontWeight:"bold",
+    fontWeight: 'bold',
     marginTop: height * 0.05,
   },
   listContent: {
-   paddingBottom: height * 0.02,
+    paddingBottom: height * 0.02,
   },
 });
 
 export default HabitatPicture;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
