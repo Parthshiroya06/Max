@@ -1,3 +1,5 @@
+
+
 // Fixed the multiple picture are not saving issue jkn
 
 import React, {useState, useEffect} from 'react';
@@ -94,10 +96,11 @@ const CollectDataScreen = ({noteId}) => {
   const [conductivity, setConductivity] = useState('');
   const [turbidity, setTurbidity] = useState('');
   const [o2dis, setO2dis] = useState('');
-  const [note, setNote] = useState([]);
+
   //console.log ( country)
   console.log(noteSerial2);
-  console.log('projectName:', route.params?.note, projectName);
+  console.log('projectName:', projectName);
+  
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -228,7 +231,8 @@ const CollectDataScreen = ({noteId}) => {
               // setLocalityDesignation(generatedDesignation);
 
               const generatedDesignation = `${projectName}${localityNumber}`;
-              setLocalityDesignation(generatedDesignation);
+                   setLocalityDesignation(generatedDesignation);
+
 
               // Log the generated designation
               console.log(
@@ -254,7 +258,7 @@ const CollectDataScreen = ({noteId}) => {
     };
 
     fetchExpeditionNumber();
-  }, [country, projectName, projectId, noteSerial, route.params?.note]); // Adding dependencies
+  }, [country, projectName , projectId, noteSerial, route.params?.note]); // Adding dependencies
 
   // Function to load existing note data
   const loadNoteData = note => {
@@ -276,8 +280,8 @@ const CollectDataScreen = ({noteId}) => {
     setHardness(note.hardness || '');
     setPH(note.pH || '');
     setConductivity(note.conductivity || '');
-    setTurbidity(note.turbidity || '');
-    setO2dis(note.o2dis || '');
+    setTurbidity(note.turbidity || '')
+    setO2dis(note.o2dis || '')
   };
 
   useFocusEffect(
@@ -286,7 +290,6 @@ const CollectDataScreen = ({noteId}) => {
         try {
           const existingNotes = await AsyncStorage.getItem('notes');
           let notes = existingNotes ? JSON.parse(existingNotes) : [];
-
           //console.log("Route params note: ", route.params?.note);
 
           // If route.params?.note exists, load that specific note
@@ -382,6 +385,8 @@ const CollectDataScreen = ({noteId}) => {
   };
 
   // Function to validate form fields
+  
+  
 
   const handleSubmit = async () => {
     const projectId = route.params?.projectId;
@@ -440,8 +445,8 @@ const CollectDataScreen = ({noteId}) => {
         pH: pH || '',
         additional: additional || '',
         conductivity: conductivity || '',
-        turbidity: turbidity || '',
-        o2dis: o2dis || '',
+        turbidity:turbidity || '',
+        o2dis:o2dis || ''
       };
 
       // Log the new note object for debugging
@@ -465,8 +470,7 @@ const CollectDataScreen = ({noteId}) => {
       }
 
       // Navigate back to the ProjectDetails screen
-      navigation.navigate('ProjectDetails', {projectId});
-      k;
+      navigation.navigate('ProjectDetails', {projectId});k
     } catch (error) {
       console.error('Error saving note to AsyncStorage:', error);
     }
@@ -580,7 +584,7 @@ const CollectDataScreen = ({noteId}) => {
           name: generatedImageName,
           sizeMB: sizeInMB,
         };
-        console.log('sdfsfsdf>>>>>>', imagess);
+
         // Add the new image to the imagess state
         setImagess([...imagess, newImage]);
         console.log('Image saved with name:', generatedImageName);
@@ -731,7 +735,7 @@ const CollectDataScreen = ({noteId}) => {
             <Text style={styles.label}>Vial pictures</Text>
 
             {/* Conditionally render camera icon or image preview */}
-            {images.length < 1 ? (
+            {images.length < 2 ? (
               <TouchableOpacity
                 style={styles.pictureContainer}
                 onPress={openCameravial}>
@@ -750,27 +754,16 @@ const CollectDataScreen = ({noteId}) => {
 
                   const noteNumber = route.params?.note
                     ? route.params.note.Serial // If editing, keep the same Serial
-                    : `Note 0${note.length + 1}`; // New note gets the next number
+                    : `Note 0${notes.length + 1}`; // New note gets the next number
 
                   // Check if projectId exists before navigating
                   if (projectId) {
-                    console.log(
-                      'sdfsfSD>>>>',
-                      noteNumber,
-                      countryName,
-                      projectName,
-                      localityNumber,
-                      images,
-                      route.params?.note,
-                    );
                     navigation.navigate('VialPicture', {
                       projectId: projectId, // Pass the project ID
                       serial: noteNumber,
                       country: countryName,
                       projectName,
                       localityNumber,
-                      imageList: images,
-                      goBack: list => setImages(list),
                     });
                   } else {
                     console.error('Project ID is not defined!');
@@ -803,7 +796,7 @@ const CollectDataScreen = ({noteId}) => {
 
             <Text style={styles.label}>Habitat pictures </Text>
             {/* Conditionally render camera icon or image preview */}
-            {imagess.length < 1 ? (
+            {imagess.length < 7 ? (
               <TouchableOpacity
                 style={styles.pictureContainer}
                 onPress={openCameraHabitat}>
@@ -823,7 +816,7 @@ const CollectDataScreen = ({noteId}) => {
                   console.log('projectI:', projectId);
                   const noteNumber = route.params?.note
                     ? route.params.note.Serial // If editing, keep the same Serial
-                    : `Note 0${note.length + 1}`; // New note gets the next number
+                    : `Note 0${notes.length + 1}`; // New note gets the next number
 
                   //console.log('noteNumber:', noteNumber);
 
@@ -835,8 +828,6 @@ const CollectDataScreen = ({noteId}) => {
                       country: countryName,
                       projectName,
                       localityNumber,
-                      imageList: imagess,
-                      goBack: list => setImagess(list),
                     });
                   } else {
                     console.error('Project ID is not defined!');
@@ -1027,12 +1018,13 @@ const CollectDataScreen = ({noteId}) => {
                 value={conductivity}
                 onChangeText={setConductivity}
               />
-              <TextInput
+            <TextInput
                 style={styles.measurementBox}
                 placeholder="pH"
                 value={pH}
                 onChangeText={setPH}
               />
+              
             </View>
             <View style={styles.measurementContainer}>
               <TextInput
@@ -1041,12 +1033,13 @@ const CollectDataScreen = ({noteId}) => {
                 value={turbidity}
                 onChangeText={setTurbidity}
               />
-              <TextInput
+            <TextInput
                 style={styles.measurementBox}
                 placeholder="o2dis"
                 value={o2dis}
                 onChangeText={setO2dis}
               />
+              
             </View>
 
             {/* Geology Section */}

@@ -9,66 +9,62 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 
 const MangerView = ({route}) => {
-  const {projectId, noteSerial, projectName, createdBy} = route.params; // Extract projectId and noteSerial from route params
-  const [data, setData] = useState(null); // State to store fetched data
-  const [loading, setLoading] = useState(true); // State to handle loading indicator
+  const {projectId, noteSerial , projectName , createdBy} = route.params;   // Extract projectId and noteSerial from route params
+  const [data, setData] = useState(null);    // State to store fetched data
+  const [loading, setLoading] = useState(true);   // State to handle loading indicator
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchNote = async () => {
-      try {
-        const projectRef = firestore()
-          .collection('NotesUploaded')
-          .doc(projectName);
-        const projectDoc = await projectRef.get();
 
-        if (!projectDoc.exists) {
-          console.error(`No project found with ID: ${projectName}`);
-          setLoading(false);
-          return;
-        }
+useEffect(() => {
+  const fetchNote = async () => {
+    try {
+      const projectRef = firestore().collection('NotesUploaded').doc(projectName);
+      const projectDoc = await projectRef.get();
 
-        const projectData = projectDoc.data();
-        console.log('Fetched project data:', projectData); // Log the fetched project data
-        if (!projectData.notes || !Array.isArray(projectData.notes)) {
-          console.error('No notes array found.');
-          setLoading(false);
-          return;
-        }
-
-        // Find the note with the matching Serial
-        const selectedNote = projectData.notes.find(
-          note => note.Serial === noteSerial,
-        );
-        console.log('Selected note:', selectedNote); // Log the selected note
-
-        if (!selectedNote) {
-          console.error(`No note found with Serial: ${noteSerial}`);
-          setLoading(false);
-          return;
-        }
-
-        setData(selectedNote); // Corrected from setNoteData to setData
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
+      if (!projectDoc.exists) {
+        console.error(`No project found with ID: ${projectName}`);
         setLoading(false);
+        return;
       }
-    };
 
-    fetchNote();
-  }, [projectId, noteSerial]);
+      const projectData = projectDoc.data();
+      console.log('Fetched project data:', projectData); // Log the fetched project data
+      if (!projectData.notes || !Array.isArray(projectData.notes)) {
+        console.error('No notes array found.');
+        setLoading(false);
+        return;
+      }
+
+      // Find the note with the matching Serial
+      const selectedNote = projectData.notes.find(note => note.Serial === noteSerial);
+      console.log('Selected note:', selectedNote); // Log the selected note
+      
+      if (!selectedNote) {
+        console.error(`No note found with Serial: ${noteSerial}`);
+        setLoading(false);
+        return;
+      }
+
+      setData(selectedNote); // Corrected from setNoteData to setData
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchNote();
+}, [projectId, noteSerial]);
+
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.row}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Home')}
-          style={styles.touchable}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.touchable}>
           <Text style={styles.symbol}>{'\u2039'}</Text>
         </TouchableOpacity>
         <Text style={styles.date}>{data?.Serial || 'N/A'}</Text>
@@ -87,9 +83,7 @@ const MangerView = ({route}) => {
         <Text style={styles.label}>Latitude:</Text>
         <Text style={styles.value}>{data?.coordinates?.latitude || 'N/A'}</Text>
         <Text style={styles.label}>Longitude:</Text>
-        <Text style={styles.value}>
-          {data?.coordinates?.longitude || 'N/A'}
-        </Text>
+        <Text style={styles.value}>{data?.coordinates?.longitude || 'N/A'}</Text>
       </View>
 
       {/* Planarians Section */}
@@ -117,24 +111,25 @@ const MangerView = ({route}) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Pictures</Text>
         <View style={styles.line} />
-        <Text style={styles.label}>Vial pictu</Text>
+        <Text style={styles.label}>Vial picture</Text>
         <TouchableOpacity
           style={styles.habitatPicturesContainer}
           onPress={() => {
-            const noteNumber = route.params?.note
-              ? route.params.note.Serial // If editing, keep the same Serial
-              : `Note 0${data.length + 1}`; // New note gets the next number
-
-            // Check if projectId exists before navigating
-            if (projectId) {
-              navigation.navigate('VialPictureUploaded', {
-                projectId: projectId, // Pass the project ID
-                serial: noteNumber,
-              });
-            } else {
-              console.error('Project ID is not defined!');
-            }
-          }}>
+           const noteNumber = route.params?.note
+               ? route.params.note.Serial // If editing, keep the same Serial
+               : `Note 0${data.length + 1}`; // New note gets the next number
+       
+           // Check if projectId exists before navigating
+           if (projectId) {
+             navigation.navigate('VialPictureUploaded', { 
+               projectId: projectId,        // Pass the project ID
+               serial: noteNumber,   
+             });
+           } else {
+             console.error('Project ID is not defined!');
+           }
+         }}
+        >       
           <Image
             style={styles.image}
             source={{uri: data?.images?.[0]?.uri || './placeholder.jpg'}}
@@ -145,20 +140,21 @@ const MangerView = ({route}) => {
         <TouchableOpacity
           style={styles.habitatPicturesContainer}
           onPress={() => {
-            const noteNumber = route.params?.note
-              ? route.params.note.Serial // If editing, keep the same Serial
-              : `Note 0${data.length + 1}`; // New note gets the next number
-
-            // Check if projectId exists before navigating
-            if (projectId) {
-              navigation.navigate('HabitaPictureUploaded', {
-                projectId: projectId, // Pass the project ID
-                serial: noteNumber,
-              });
-            } else {
-              console.error('Project ID is not defined!');
-            }
-          }}>
+           const noteNumber = route.params?.note
+               ? route.params.note.Serial // If editing, keep the same Serial
+               : `Note 0${data.length + 1}`; // New note gets the next number
+       
+           // Check if projectId exists before navigating
+           if (projectId) {
+             navigation.navigate('HabitaPictureUploaded', { 
+               projectId: projectId,        // Pass the project ID
+               serial: noteNumber,   
+             });
+           } else {
+             console.error('Project ID is not defined!');
+           }
+         }}
+        >       
           {data?.imagess?.map((image, index) => (
             <Image
               key={index}
@@ -209,17 +205,18 @@ const MangerView = ({route}) => {
           Temperature :{' '}
           <Text style={styles.value}>{data?.temperature || 'N/A'} °C</Text>
         </Text>
-        <Text style={styles.label}>
-          Conductivity :{' '}
-          <Text style={styles.value}>{data?.conductivity || 'N/A'} µS/cm</Text>
-        </Text>
-        <Text style={styles.label}>
-          Turbidity :{' '}
-          <Text style={styles.value}>{data?.turbidity || 'N/A'} FNU</Text>
-        </Text>
-        <Text style={styles.label}>
-          O2dis : <Text style={styles.value}>{data?.o2dis || 'N/A'} %</Text>
-        </Text>
+         <Text style={styles.label}>
+                  Conductivity :{' '}
+                  <Text style={styles.value}>{data?.conductivity || 'N/A'} µS/cm</Text>
+                </Text>
+                <Text style={styles.label}>
+                  Turbidity :{' '}
+                  <Text style={styles.value}>{data?.turbidity || 'N/A'} FNU</Text>
+                </Text>
+                <Text style={styles.label}>
+                  O2dis :{' '}
+                  <Text style={styles.value}>{data?.o2dis  || 'N/A'} %</Text>
+                </Text>
         <Text style={styles.label}>
           Hardness : <Text style={styles.value}>{data?.hardness || 'N/A'}</Text>
         </Text>

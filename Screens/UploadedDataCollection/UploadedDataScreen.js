@@ -9,18 +9,19 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation,} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UploadedData = ({route}) => {
-  const {projectId, noteSerial} = route.params; // Extract projectId and noteSerial from route params
-  const [data, setData] = useState(null); // State to store fetched data
-  const [loading, setLoading] = useState(true); // State to handle loading indicator
+  const {projectId, noteSerial} = route.params;   // Extract projectId and noteSerial from route params
+  const [data, setData] = useState(null);    // State to store fetched data
+  const [loading, setLoading] = useState(true);   // State to handle loading indicator
   const navigation = useNavigation();
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
+
         // Fetch project data from AsyncStorage
         const projectData = await AsyncStorage.getItem(projectId);
 
@@ -59,7 +60,7 @@ const UploadedData = ({route}) => {
     };
 
     fetchData();
-  }, [projectId, noteSerial]); // Dependencey array to refetch data when projectID or noteSerial chnages
+  }, [projectId, noteSerial]);   // Dependencey array to refetch data when projectID or noteSerial chnages
 
   if (loading) {
     return (
@@ -80,11 +81,9 @@ const UploadedData = ({route}) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.row}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Home')}
-          style={styles.touchable}>
-          <Text style={styles.symbol}>{'\u2039'}</Text>
-        </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.touchable}>
+      <Text style={styles.symbol}>{'\u2039'}</Text>
+    </TouchableOpacity>
         <Text style={styles.date}>{data.Serial || 'N/A'}</Text>
       </View>
 
@@ -134,36 +133,37 @@ const UploadedData = ({route}) => {
           style={styles.habitatPicturesContainer}
           onPress={() => {
             // Generate a random size for each image, with two decimal places
-            // const randomSizes = imagess.map(() => (Math.random() * (9 - 3) + 3).toFixed(1));
-            // navigation.navigate('HabitatPicture', {
-            //   projectId: projectId,        // Pass the project ID
-            //     serial: noteNumber,
-            //   //selectedImages: imagess,
-            //   //imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
-            //   //imageSizeMBs: randomSizes  // Randomly generated image size
-            // });
-            const projectId = route.params?.projectId;
-
-            console.log('projectIdcgh:', projectId);
-            const noteNumber = route.params?.note
-              ? route.params.note.Serial // If editing, keep the same Serial
-              : `Note 0${notes.length + 1}`; // New note gets the next number
-
-            console.log('noteNumber:', noteNumber);
-
-            // Check if projectId exists before navigating
-            if (projectId) {
-              navigation.navigate('VialPictureUploaded', {
-                projectId: projectId, // Pass the project ID
-                serial: noteNumber,
-                //selectedImage: images[0],
-                //imageName: images[0].name,  // Replace with the actual image name if available
-                //imageSizeMB: randomSize  // Randomly generated image size
-              });
-            } else {
-              console.error('Project ID is not defined!');
-            }
-          }}>
+           // const randomSizes = imagess.map(() => (Math.random() * (9 - 3) + 3).toFixed(1));  
+           // navigation.navigate('HabitatPicture', { 
+           //   projectId: projectId,        // Pass the project ID
+           //     serial: noteNumber,  
+           //   //selectedImages: imagess, 
+           //   //imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
+           //   //imageSizeMBs: randomSizes  // Randomly generated image size
+           // });
+           const projectId = route.params?.projectId;
+           
+           console.log('projectIdcgh:', projectId);
+           const noteNumber = route.params?.note
+               ? route.params.note.Serial // If editing, keep the same Serial
+               : `Note 0${notes.length + 1}`; // New note gets the next number
+       
+               console.log('noteNumber:', noteNumber);
+       
+           // Check if projectId exists before navigating
+           if (projectId) {
+             navigation.navigate('VialPictureUploaded', { 
+               projectId: projectId,        // Pass the project ID
+               serial: noteNumber,   
+               //selectedImage: images[0], 
+               //imageName: images[0].name,  // Replace with the actual image name if available
+               //imageSizeMB: randomSize  // Randomly generated image size
+             });
+           } else {
+             console.error('Project ID is not defined!');
+           }
+         }}
+  >       
           <Image
             style={styles.image}
             source={{uri: data.images?.[0]?.uri || './placeholder.jpg'}}
@@ -175,36 +175,37 @@ const UploadedData = ({route}) => {
           style={styles.habitatPicturesContainer}
           onPress={() => {
             // Generate a random size for each image, with two decimal places
-            // const randomSizes = imagess.map(() => (Math.random() * (9 - 3) + 3).toFixed(1));
-            // navigation.navigate('HabitatPicture', {
-            //   projectId: projectId,        // Pass the project ID
-            //     serial: noteNumber,
-            //   //selectedImages: imagess,
-            //   //imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
-            //   //imageSizeMBs: randomSizes  // Randomly generated image size
-            // });
-            const projectId = route.params?.projectId;
-
-            console.log('projectIdcgh:', projectId);
-            const noteNumber = route.params?.note
-              ? route.params.note.Serial // If editing, keep the same Serial
-              : `Note 0${notes.length + 1}`; // New note gets the next number
-
-            console.log('noteNumber:', noteNumber);
-
-            // Check if projectId exists before navigating
-            if (projectId) {
-              navigation.navigate('HabitaPictureUploaded', {
-                projectId: projectId, // Pass the project ID
-                serial: noteNumber,
-                //selectedImage: images[0],
-                //imageName: images[0].name,  // Replace with the actual image name if available
-                //imageSizeMB: randomSize  // Randomly generated image size
-              });
-            } else {
-              console.error('Project ID is not defined!');
-            }
-          }}>
+           // const randomSizes = imagess.map(() => (Math.random() * (9 - 3) + 3).toFixed(1));  
+           // navigation.navigate('HabitatPicture', { 
+           //   projectId: projectId,        // Pass the project ID
+           //     serial: noteNumber,  
+           //   //selectedImages: imagess, 
+           //   //imageNames: imagess.map(image => image.name || 'Unnamed'),  // Replace with the actual image name if available
+           //   //imageSizeMBs: randomSizes  // Randomly generated image size
+           // });
+           const projectId = route.params?.projectId;
+           
+           console.log('projectIdcgh:', projectId);
+           const noteNumber = route.params?.note
+               ? route.params.note.Serial // If editing, keep the same Serial
+               : `Note 0${notes.length + 1}`; // New note gets the next number
+       
+               console.log('noteNumber:', noteNumber);
+       
+           // Check if projectId exists before navigating
+           if (projectId) {
+             navigation.navigate('HabitaPictureUploaded', { 
+               projectId: projectId,        // Pass the project ID
+               serial: noteNumber,   
+               //selectedImage: images[0], 
+               //imageName: images[0].name,  // Replace with the actual image name if available
+               //imageSizeMB: randomSize  // Randomly generated image size
+             });
+           } else {
+             console.error('Project ID is not defined!');
+           }
+         }}
+  >       
           {data.imagess?.map((image, index) => (
             <Image
               key={index}
@@ -264,7 +265,8 @@ const UploadedData = ({route}) => {
           <Text style={styles.value}>{data.turbidity || 'N/A'} FNU</Text>
         </Text>
         <Text style={styles.label}>
-          O2dis : <Text style={styles.value}>{data.o2dis || 'N/A'} %</Text>
+          O2dis :{' '}
+          <Text style={styles.value}>{data.o2dis  || 'N/A'} %</Text>
         </Text>
         <Text style={styles.label}>
           Hardness : <Text style={styles.value}>{data.hardness || 'N/A'}</Text>
